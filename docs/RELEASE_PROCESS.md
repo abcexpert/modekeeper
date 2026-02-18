@@ -36,6 +36,12 @@ From repo root:
 ./scripts/release_public.sh
 ```
 
+For CI/local smoke (checks + build only, no publish side effects):
+
+```bash
+./scripts/release_public.sh --dry-run
+```
+
 The script enforces:
 - clean git working tree
 - current branch is `main`
@@ -48,6 +54,8 @@ The script enforces:
 - GitHub Release creation with assets:
   - `report/procurement_pack/procurement_pack.tar.gz`
   - `report/procurement_pack/checksums.sha256`
+
+With `--dry-run`, the script stops after verifying procurement pack assets and prints `dry-run ok` with the computed tag and asset paths.
 
 ## Do not commit generated outputs
 

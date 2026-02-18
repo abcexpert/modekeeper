@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/release_public.sh [--dry-run] [--help]
+
+Options:
+  --dry-run  Run checks and build through procurement pack verification only.
+             Skip git tag creation, push, and GitHub Release creation.
+  --help     Show this help message and exit.
+EOF
+}
+
 on_err() {
   local exit_code=$?
   local line_no=${1:-unknown}
@@ -16,6 +27,25 @@ on_signal() {
 trap 'on_err $LINENO' ERR
 trap 'on_signal INT' INT
 trap 'on_signal TERM' TERM
+
+dry_run=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [[ "$(pwd)" != "$(git rev-parse --show-toplevel 2>/dev/null || true)" ]]; then
   echo "ERROR: run this script from the repository root." >&2
@@ -53,12 +83,26 @@ if [[ "${local_main_sha}" != "${origin_main_sha}" ]]; then
 fi
 
 version="$(python3 - <<'PY'
-import tomllib
 from pathlib import Path
+import re
 
-pyproject = Path("pyproject.toml")
-data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-print(data["project"]["version"])
+text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+# Prefer tomllib when available (py>=3.11), but support py3.10 without extra deps.
+try:
+    import tomllib  # type: ignore[attr-defined]
+    data = tomllib.loads(text)
+    print(data["project"]["version"])
+except ModuleNotFoundError:
+    m = re.search(r'(?ms)^\[project\]\s*(.*?)(?=^\[|\Z)', text)
+    if not m:
+        raise SystemExit("no [project] section in pyproject.toml")
+    sec = m.group(1)
+    m2 = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"\s*$', sec)
+    if not m2:
+        raise SystemExit("no [project].version in pyproject.toml")
+    print(m2.group(1))
+
 PY
 )"
 
@@ -101,6 +145,14 @@ fi
 if [[ ! -f "${PACK_CHECKSUMS}" ]]; then
   echo "ERROR: expected release asset not found: ${PACK_CHECKSUMS}" >&2
   exit 1
+fi
+
+if [[ "${dry_run}" -eq 1 ]]; then
+  echo
+  echo "dry-run ok"
+  echo "Tag: ${TAG}"
+  echo "Assets: ${PACK_TARBALL}, ${PACK_CHECKSUMS}"
+  exit 0
 fi
 
 echo "Creating annotated tag ${TAG} on HEAD..."
