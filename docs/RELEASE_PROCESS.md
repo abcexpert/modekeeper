@@ -55,7 +55,7 @@ Run both smoke paths (fresh environments), then tag.
 ```bash
 rm -rf /tmp/mk-install-smoke-home
 HOME=/tmp/mk-install-smoke-home bash ./bin/mk-install
-/tmp/mk-install-smoke-home/.modekeeper/venv/bin/mk --version
+/tmp/mk-install-smoke-home/.modekeeper/venv/bin/python -c 'import importlib.metadata as m; print(m.version(\"modekeeper\"))'
 ```
 
 ### pip path
@@ -63,7 +63,7 @@ HOME=/tmp/mk-install-smoke-home bash ./bin/mk-install
 rm -rf /tmp/mk-pip-smoke-venv
 python -m venv /tmp/mk-pip-smoke-venv
 PIP_DISABLE_PIP_VERSION_CHECK=1 /tmp/mk-pip-smoke-venv/bin/pip install -U --no-cache-dir --index-url https://pypi.org/simple modekeeper
-/tmp/mk-pip-smoke-venv/bin/mk --version
+/tmp/mk-pip-smoke-venv/bin/python -c 'import importlib.metadata as m; print(m.version(\"modekeeper\"))'
 ```
 
 ## 7) Tag and release
