@@ -140,7 +140,12 @@ echo "Installing package in editable mode..."
 python3 -m pip install -e .
 
 echo "Running tests..."
-pytest -q
+if ! python3 -c "import pytest" >/dev/null 2>&1; then
+  echo "Installing pytest..."
+  python3 -m pip install -U pytest
+fi
+python3 -m pytest -q
+
 
 echo "Building procurement pack..."
 ./bin/mk-procurement-pack
