@@ -119,13 +119,21 @@ PACK_TARBALL="${PACK_DIR}/procurement_pack.tar.gz"
 PACK_CHECKSUMS="${PACK_DIR}/checksums.sha256"
 
 if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
-  echo "ERROR: tag already exists locally: ${TAG}" >&2
-  exit 1
+  if [[ "$dry_run" -eq 1 ]]; then
+    echo "WARN: tag already exists locally: ${TAG} (ignored for --dry-run)" >&2
+  else
+    echo "ERROR: tag already exists locally: ${TAG}" >&2
+    exit 1
+  fi
 fi
 
 if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-  echo "ERROR: tag already exists on origin: ${TAG}" >&2
-  exit 1
+  if [[ "$dry_run" -eq 1 ]]; then
+    echo "WARN: tag already exists on origin: ${TAG} (ignored for --dry-run)" >&2
+  else
+    echo "ERROR: tag already exists on origin: ${TAG}" >&2
+    exit 1
+  fi
 fi
 
 echo "Installing package in editable mode..."
