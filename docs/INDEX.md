@@ -14,6 +14,7 @@ Navigation hub for current project documentation.
 - [Workflow](WORKFLOW.md)
 - [Apply spec](APPLY_SPEC.md)
 - [Release process](RELEASE_PROCESS.md)
+- [Release script](../scripts/release_public.sh)
 - [Procurement pack](PROCUREMENT_PACK.md)
 - [Buyer proof pack](BUYER_PROOF_PACK.md)
 
