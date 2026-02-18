@@ -16,9 +16,9 @@ export MODEKEEPER_REPO_BASE_URL="https://<repo-base-url>"
 ## First commands
 
 ```bash
-mk --version
-mk doctor
-mk quickstart --observe-source synthetic
+mk --help
+mk observe --source synthetic --duration 10s --out report/getting_started/observe
+mk closed-loop run --scenario drift --observe-source synthetic --observe-duration 10s --dry-run --out report/getting_started/plan
 ```
 
 ## Notes

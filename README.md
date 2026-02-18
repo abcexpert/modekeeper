@@ -29,19 +29,21 @@ Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
 
 ```bash
 python3 -m pip install -U modekeeper
-mk doctor
-mk quickstart --out report/quickstart
+mk --help
+mk observe --source synthetic --duration 10s --out report/quickstart/observe
+mk closed-loop run --scenario drift --observe-source synthetic --observe-duration 10s --dry-run --out report/quickstart/plan
+mk export bundle --in report/quickstart --out report/quickstart/export
 
 # quickstart artifacts
 ls report/quickstart
+ls report/quickstart/observe
 ls report/quickstart/plan
-ls report/quickstart/verify
 ls report/quickstart/export
 ```
 
 Expected artifact roots:
+- `report/quickstart/observe` (read-only telemetry capture)
 - `report/quickstart/plan` (dry-run planning outputs)
-- `report/quickstart/verify` (verify report with `verify_ok`)
 - `report/quickstart/export` (bundle/export outputs)
 
 ## Safety gates

@@ -4,7 +4,7 @@
 - CLI-first product (`mk`) with read-only default flow: `observe`, `eval`, `closed-loop run/watch` dry-run, `k8s render`, `k8s verify`.
 - Paid, gated mutate path: `k8s apply` and `closed-loop ... --apply` blocked by kill-switch, license validity/entitlements, and `verify_ok=true`.
 - Kubernetes plan pipeline: build plan, render kubectl script, verify context/object/dry-run checks, and apply with deterministic artifacts.
-- Onboarding tooling for customers/operators: `bin/mk-install`, `mk doctor` (and wrapper `bin/mk-doctor`), `docs/QUICKSTART.md`.
+- Onboarding tooling for customers/operators: `bin/mk-install`, `mk --help`, and `docs/QUICKSTART.md`.
 - License system with keyring + `kid` selection/rotation, offline path resolution, and clear block reasons.
 - Safety + governance foundations: guardrails, approval split (hot/cold/advanced), explain logs, decision trace JSONL.
 - Policy engines: chord policy (primary) and scalar baseline; policy bundle export and hashes.
@@ -49,8 +49,8 @@
 
 ## Golden Commands
 - `./bin/mk-install`
-- `mk doctor`
 - `mk --help`
+- `mk observe --help`
 - `mk eval file --path tests/data/observe/stable.jsonl --out report/_eval`
 - `mk observe --source file --path tests/data/observe/realistic_dirty.jsonl --duration 2s --out report/_observe`
 - `mk closed-loop run --scenario drift --dry-run --out report/_closed_loop`

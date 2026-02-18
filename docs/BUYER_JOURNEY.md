@@ -6,21 +6,24 @@ This flow is for buyer-safe evaluation in public mode: install, validate environ
 
 ```bash
 python3 -m pip install -U modekeeper
-mk --version
+mk --help
 ```
 
-## 2) Environment doctor
+## 2) CLI availability check
 
 ```bash
-mk doctor
+mk --help
+mk observe --help
+mk closed-loop --help
+mk roi --help
 ```
 
-Expected: doctor exits with `0`.
+Expected: all help commands exit with `0`.
 
-## 3) Quickstart (safe default)
+## 3) Observe (safe default)
 
 ```bash
-mk quickstart --out report/quickstart
+mk observe --source synthetic --duration 30s --record-raw report/buyer/observe/observe_raw.jsonl --out report/buyer/observe
 ```
 
 ## 4) Dry-run / plan / verify (no apply)
@@ -29,7 +32,7 @@ mk quickstart --out report/quickstart
 mk closed-loop run --scenario drift --dry-run --out report/buyer/plan
 PLAN="$(python3 -c 'import json; print(json.load(open("report/buyer/plan/closed_loop_latest.json", encoding="utf-8"))["k8s_plan_path"])')"
 mk k8s verify --plan "$PLAN" --out report/buyer/verify
-mk estimate --in report/buyer/plan --out report/buyer/roi
+mk roi estimate --observe-source file --observe-path report/buyer/observe/observe_raw.jsonl --out report/buyer/roi
 mk export bundle --in report/buyer --out report/buyer/export
 ```
 
