@@ -14,6 +14,7 @@ Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
 
 ## Start here
 
+- Buyer journey: [`docs/BUYER_JOURNEY.md`](docs/BUYER_JOURNEY.md)
 - Product overview: [`docs/product.md`](docs/product.md)
 - Quickstart: [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 - Security posture: [`docs/SECURITY_POSTURE.md`](docs/SECURITY_POSTURE.md)
@@ -27,7 +28,7 @@ Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
 ## 60-second quickstart
 
 ```bash
-python -m pip install -U modekeeper
+python3 -m pip install -U modekeeper
 mk doctor
 mk quickstart --out report/quickstart
 
@@ -56,4 +57,4 @@ Details and command contracts:
 
 ## Public vs Pro
 
-Public GitHub + PyPI (`modekeeper`) is the showroom/stub surface. Pro, apply, and advanced capabilities remain private on `abc2`; see the boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).
+Public GitHub + PyPI (`modekeeper`) is the showroom/stub surface with verify-first workflows (`observe -> plan -> verify -> ROI -> export`). Apply/mutate capabilities are disabled by default in public and reserved for licensed distribution; see boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).

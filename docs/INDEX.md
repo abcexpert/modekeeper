@@ -3,6 +3,7 @@
 Navigation hub for current project documentation.
 
 ## Start here
+- [Buyer journey](BUYER_JOURNEY.md)
 - [Product overview](product.md)
 - [Quickstart](QUICKSTART.md)
 - [Developer guide](DEV_GUIDE.md)
