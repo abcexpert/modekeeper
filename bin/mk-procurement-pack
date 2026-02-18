@@ -101,7 +101,7 @@ echo "[4/7] write tool versions"
 } >"$META_OUT/versions.txt"
 
 echo "[5/7] write pip freeze"
-if ! python -m pip freeze >"$META_OUT/pip_freeze.txt"; then
+if ! python3 -m pip freeze >"$META_OUT/pip_freeze.txt"; then
   echo "ERROR: failed to write $META_OUT/pip_freeze.txt from active python env" >&2
   exit 2
 fi
