@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Mint a repo-local dev license.
+
+Dev-only helper:
+- re-execs into repo .venv if present
+- ensures repo/src is importable
+- mints canonical license format + deterministic signing key
+- self-verifies minted license
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+import os
+import sys
+import time
+from contextlib import contextmanager
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _ensure_venv_and_imports(repo: Path) -> None:
+    venv_py = (repo / ".venv/bin/python").resolve()
+    cur_py = Path(sys.executable).resolve()
+    if venv_py.exists() and cur_py != venv_py:
+        os.execv(str(venv_py), [str(venv_py), str(__file__), *sys.argv[1:]])
+
+    src = (repo / "src").resolve()
+    if src.exists() and str(src) not in sys.path:
+        sys.path.insert(0, str(src))
+
+
+@contextmanager
+def _env_override(name: str, value: str):
+    prev = os.environ.get(name)
+    os.environ[name] = value
+    try:
+        yield
+    finally:
+        if prev is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = prev
+
+
+def main() -> int:
+    repo = _repo_root()
+    _ensure_venv_and_imports(repo)
+
+    home = Path(os.environ.get("HOME", "~")).expanduser()
+    keys_path = (home / ".config" / "modekeeper" / "license_public_keys.json").resolve()
+
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from modekeeper.license.canonical import canonical_json_bytes  # type: ignore
+    from modekeeper.license.verify import verify_license  # type: ignore
+
+    now = int(time.time())
+    issued_at = now - 60  # skew tolerance for local clock jitter
+    expires_at = now + 10 * 365 * 24 * 3600  # +10y
+    entitlements = ["apply", "observe", "paid"]
+    payload = {
+        "schema_version": "license.v1",
+        "org": "Modekeeper Dev",
+        "issued_at": issued_at,
+        "expires_at": expires_at,
+        "entitlements": entitlements,
+        "bindings": {},
+        "kid": "mk-dev-2026-01",
+    }
+
+    private_key = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+    public_key_b64 = base64.b64encode(
+        private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        ),
+    ).decode("ascii")
+    signature = base64.b64encode(private_key.sign(canonical_json_bytes(payload))).decode("ascii")
+    license_data = {**payload, "signature": signature}
+
+    keys_path.parent.mkdir(parents=True, exist_ok=True)
+    keys_path.write_text(
+        json.dumps({payload["kid"]: public_key_b64}, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    with NamedTemporaryFile("w", encoding="utf-8", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+        tmp.write(json.dumps(license_data, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+    with _env_override("MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH", str(keys_path)):
+        report = verify_license(tmp_path)
+    tmp_path.unlink(missing_ok=True)
+    if not (isinstance(report, dict) and report.get("license_ok") is True):
+        raise SystemExit(f"minted license does not verify: {report}")
+
+    print(json.dumps(license_data, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

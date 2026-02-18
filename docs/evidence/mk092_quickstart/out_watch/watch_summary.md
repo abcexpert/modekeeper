@@ -1,0 +1,20 @@
+started_at: 2026-02-14T07:19:34+00:00
+finished_at: 2026-02-14T07:19:36+00:00
+duration_s: 2
+interval_s: 1
+max_iterations: 2
+iterations_done: 2
+proposed_total: 2
+applied_total: 0
+blocked_total: 0
+verify_failed_total: 0
+dry_run_total: 2
+apply_attempted_total: 0
+apply_ok_total: 0
+apply_failed_total: 0
+last_iteration_out_dir: docs/evidence/mk092_quickstart/out_watch/iter_0002
+observe_ingest: dropped_invalid_json=0 dropped_invalid_shape=0 dropped_missing_fields=0 dropped_total=0
+watch_latest_path: docs/evidence/mk092_quickstart/out_watch/watch_latest.json
+watch_summary_path: docs/evidence/mk092_quickstart/out_watch/watch_summary.md
+last_iteration_report_path: docs/evidence/mk092_quickstart/out_watch/iter_0002/closed_loop_latest.json
+last_iteration_explain_path: docs/evidence/mk092_quickstart/out_watch/iter_0002/explain.jsonl

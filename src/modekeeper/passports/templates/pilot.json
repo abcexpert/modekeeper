@@ -1,0 +1,40 @@
+{
+  "schema_version": "passport.v0",
+  "name": "pilot",
+  "description": "Maximum safety onboarding profile: propose-first, strict deltas, conservative relock.",
+  "allowed_chords": [
+    "NORMAL-HOLD",
+    "RECOVER",
+    "RELOCK"
+  ],
+  "allowed_actuators": {
+    "hot": [],
+    "cold": [
+      "grad_accum_steps",
+      "microbatch_size"
+    ]
+  },
+  "limits": {
+    "cooldown_s": 120,
+    "max_delta_per_step": 1,
+    "relock_stable_intervals": 3,
+    "knob_limits": {
+      "grad_accum_steps": {"min": 2, "max": 8},
+      "microbatch_size": {"min": 16, "max": 64}
+    }
+  },
+  "invariants": [
+    "keep_global_batch_stable",
+    "no_external_apply_by_default"
+  ],
+  "cooldowns": {
+    "recovery_s": 180,
+    "relock_s": 240
+  },
+  "gates": {
+    "default_mode": "plan_verify_only",
+    "apply": false,
+    "require_verify_ok": true,
+    "require_kill_switch_off": true
+  }
+}

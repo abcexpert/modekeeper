@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trainer
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: trainer
+  template:
+    metadata:
+      labels:
+        app: trainer
+      annotations:
+{{- range $key, $value := .Values.knobs }}
+        modekeeper/knob.{{ $key }}: {{ $value | quote }}
+{{- end }}
+    spec:
+      serviceAccountName: trainer
+      containers:
+      - name: trainer
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["python", "-m", "modekeeper.trainer.chart_runtime"]
+        env:
+        - name: MODEKEEPER_LOOP_INTERVAL_S
+          value: {{ .Values.loopIntervalSeconds | quote }}

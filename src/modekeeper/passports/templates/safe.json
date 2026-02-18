@@ -1,0 +1,50 @@
+{
+  "schema_version": "passport.v0",
+  "name": "safe",
+  "description": "Safe production starter: all safe chords, guarded movement, no apply by default.",
+  "allowed_chords": [
+    "NORMAL-HOLD",
+    "DRIFT-RETUNE",
+    "BURST-ABSORB",
+    "INPUT-STRAGGLER",
+    "RECOVER",
+    "RELOCK"
+  ],
+  "allowed_actuators": {
+    "hot": [
+      "concurrency"
+    ],
+    "cold": [
+      "grad_accum_steps",
+      "microbatch_size",
+      "dataloader_prefetch_factor",
+      "dataloader_num_workers"
+    ]
+  },
+  "limits": {
+    "cooldown_s": 90,
+    "max_delta_per_step": 1,
+    "relock_stable_intervals": 3,
+    "knob_limits": {
+      "grad_accum_steps": {"min": 1, "max": 12},
+      "microbatch_size": {"min": 8, "max": 96},
+      "concurrency": {"min": 1, "max": 16}
+    }
+  },
+  "invariants": [
+    "keep_global_batch_stable",
+    "avoid_tail_latency_regression"
+  ],
+  "cooldowns": {
+    "drift_retune_s": 120,
+    "burst_absorb_s": 90,
+    "recover_s": 180
+  },
+  "gates": {
+    "default_mode": "plan_verify_only",
+    "apply": false,
+    "require_verify_ok": true,
+    "require_paid": true,
+    "require_kill_switch_off": true
+  }
+}

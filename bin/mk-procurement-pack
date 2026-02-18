@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+  cat <<'USAGE'
+usage: ./bin/mk-procurement-pack
+
+Generate an enterprise Procurement/RFI review bundle.
+Output root: report/procurement_pack
+USAGE
+}
+
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 0 ]]; then
+  echo "ERROR: unknown argument(s): $*" >&2
+  usage >&2
+  exit 2
+fi
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+OUT_DIR="report/procurement_pack"
+DOCS_OUT="$OUT_DIR/docs"
+META_OUT="$OUT_DIR/meta"
+BUYER_OUT="$OUT_DIR/buyer_pack"
+CHECKSUMS_FILE="$OUT_DIR/checksums.sha256"
+TARBALL="$OUT_DIR/procurement_pack.tar.gz"
+MK="$REPO/.venv/bin/mk"
+if [[ ! -x "$MK" ]]; then
+  MK="$(command -v mk || true)"
+fi
+
+DOCS_TO_COPY=(
+  "README.md"
+  "LICENSE"
+  "docs/SECURITY_POSTURE.md"
+  "docs/COMPLIANCE_MATRIX.md"
+  "docs/SECURITY_QA.md"
+  "docs/THREAT_MODEL.md"
+  "docs/BUYER_PROOF_PACK.md"
+  "docs/WORKFLOW.md"
+  "docs/RELEASE.md"
+  "docs/DISTRIBUTION_POLICY.md"
+  "docs/product.md"
+  "docs/STATUS.md"
+)
+
+require_file() {
+  local path="$1"
+  if [[ ! -f "$path" ]]; then
+    echo "ERROR: expected file is missing: $path" >&2
+    exit 2
+  fi
+}
+
+require_dir() {
+  local path="$1"
+  if [[ ! -d "$path" ]]; then
+    echo "ERROR: expected directory is missing: $path" >&2
+    exit 2
+  fi
+}
+
+echo "[1/7] reset output dir: $OUT_DIR"
+rm -rf "$OUT_DIR"
+mkdir -p "$DOCS_OUT" "$META_OUT"
+
+echo "[2/7] build buyer pack: $BUYER_OUT"
+./bin/mk-buyer-pack --out "$BUYER_OUT"
+
+echo "[3/7] copy procurement docs"
+for path in "${DOCS_TO_COPY[@]}"; do
+  require_file "$path"
+  cp "$path" "$DOCS_OUT/"
+done
+
+echo "[4/7] write tool versions"
+{
+  if [[ -n "$MK" ]] && [[ -x "$MK" ]]; then
+    "$MK" --version || true
+  else
+    echo "mk: not found"
+  fi
+
+  if command -v python >/dev/null 2>&1; then
+    python --version || true
+  else
+    echo "python: not found"
+  fi
+
+  if command -v pip >/dev/null 2>&1; then
+    pip --version || true
+  else
+    echo "pip: not found"
+  fi
+} >"$META_OUT/versions.txt"
+
+echo "[5/7] write pip freeze"
+if ! python -m pip freeze >"$META_OUT/pip_freeze.txt"; then
+  echo "ERROR: failed to write $META_OUT/pip_freeze.txt from active python env" >&2
+  exit 2
+fi
+
+echo "[6/7] write checksums"
+TMP_CHECKSUMS="$(mktemp /tmp/procurement_pack_checksums.XXXXXX)"
+(
+  cd "$OUT_DIR"
+  find . -type f ! -name '*.tmp' ! -name "$(basename "$CHECKSUMS_FILE")" -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
+) >"$TMP_CHECKSUMS"
+mv "$TMP_CHECKSUMS" "$CHECKSUMS_FILE"
+
+echo "[7/7] create tarball"
+TMP_TARBALL="$(mktemp /tmp/procurement_pack.XXXXXX.tar.gz)"
+tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
+  -C "$OUT_DIR" -czf "$TMP_TARBALL" .
+mv "$TMP_TARBALL" "$TARBALL"
+
+echo "validate outputs"
+require_dir "$BUYER_OUT"
+for path in "${DOCS_TO_COPY[@]}"; do
+  require_file "$DOCS_OUT/$(basename "$path")"
+done
+require_file "$CHECKSUMS_FILE"
+require_file "$TARBALL"
+
+echo "OK: Procurement pack created at $OUT_DIR"
+echo "Share: $TARBALL, $CHECKSUMS_FILE, and buyer-pack manifest artifacts under $BUYER_OUT"

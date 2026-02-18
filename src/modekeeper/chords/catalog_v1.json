@@ -1,0 +1,138 @@
+{
+  "schema_version": "chord_catalog.v1",
+  "chords": [
+    {
+      "id": "NORMAL-HOLD",
+      "intent": "Keep settings stable while system is healthy.",
+      "risk_tier": "safe",
+      "required_signals": [],
+      "invariants": [
+        "keep_global_batch_stable"
+      ],
+      "knobs_touched": []
+    },
+    {
+      "id": "DRIFT-RETUNE",
+      "intent": "Retune training stability when drift is detected.",
+      "risk_tier": "safe",
+      "required_signals": [
+        "drift"
+      ],
+      "invariants": [
+        "keep_global_batch_stable"
+      ],
+      "knobs_touched": [
+        "grad_accum_steps",
+        "microbatch_size"
+      ],
+      "cooldown_ms": 120000
+    },
+    {
+      "id": "BURST-ABSORB",
+      "intent": "Absorb latency burst and reduce saturation pressure.",
+      "risk_tier": "safe",
+      "required_signals": [
+        "burst"
+      ],
+      "invariants": [
+        "protect_tail_latency"
+      ],
+      "knobs_touched": [
+        "dataloader_prefetch_factor",
+        "concurrency",
+        "microbatch_size"
+      ],
+      "cooldown_ms": 90000
+    },
+    {
+      "id": "INPUT-STRAGGLER",
+      "intent": "Reduce impact of input stragglers in data pipeline.",
+      "risk_tier": "safe",
+      "required_signals": [
+        "straggler"
+      ],
+      "invariants": [
+        "protect_input_pipeline"
+      ],
+      "knobs_touched": [
+        "dataloader_num_workers"
+      ],
+      "cooldown_ms": 60000
+    },
+    {
+      "id": "RECOVER-RELOCK",
+      "intent": "Recover after incident and relock to stable profile.",
+      "risk_tier": "safe",
+      "required_signals": [
+        "incident"
+      ],
+      "invariants": [
+        "stability_before_relock"
+      ],
+      "knobs_touched": []
+    },
+    {
+      "id": "TIMEOUT-GUARD",
+      "intent": "Adjust timeout guard under straggler pressure.",
+      "risk_tier": "advanced",
+      "required_signals": [
+        "straggler"
+      ],
+      "invariants": [
+        "protect_runtime_safety"
+      ],
+      "knobs_touched": [
+        "timeout_ms"
+      ],
+      "budget": {
+        "max_changes_per_hour": 2
+      }
+    },
+    {
+      "id": "COMM-CONGESTION",
+      "intent": "Mitigate communication congestion via comm controls.",
+      "risk_tier": "advanced",
+      "required_signals": [
+        "comm_congestion"
+      ],
+      "invariants": [
+        "comm_changes_require_telemetry"
+      ],
+      "knobs_touched": [
+        "comm_bucket_mb"
+      ],
+      "budget": {
+        "require_comm_telemetry": true
+      }
+    },
+    {
+      "id": "NEAR-HANG/TIMEOUT-GUARD",
+      "intent": "Near-hang emergency timeout guard path.",
+      "risk_tier": "advanced",
+      "required_signals": [
+        "near_hang"
+      ],
+      "invariants": [
+        "explicit_approval_required"
+      ],
+      "knobs_touched": [
+        "timeout_ms"
+      ],
+      "budget": {
+        "emergency_only": true
+      }
+    },
+    {
+      "id": "SCALAR",
+      "intent": "Scalar policy action group for single-knob control.",
+      "risk_tier": "safe",
+      "required_signals": [],
+      "invariants": [
+        "single_knob_step"
+      ],
+      "knobs_touched": [
+        "concurrency"
+      ]
+    }
+  ]
+}

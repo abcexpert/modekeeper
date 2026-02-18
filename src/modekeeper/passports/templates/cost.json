@@ -1,0 +1,46 @@
+{
+  "schema_version": "passport.v0",
+  "name": "cost",
+  "description": "Cost-control profile: prioritize stable efficiency while preserving SLO boundaries.",
+  "allowed_chords": [
+    "NORMAL-HOLD",
+    "DRIFT-RETUNE",
+    "BURST-ABSORB",
+    "RECOVER",
+    "RELOCK"
+  ],
+  "allowed_actuators": {
+    "hot": [
+      "concurrency"
+    ],
+    "cold": [
+      "grad_accum_steps",
+      "microbatch_size"
+    ]
+  },
+  "limits": {
+    "cooldown_s": 75,
+    "max_delta_per_step": 1,
+    "relock_stable_intervals": 3,
+    "knob_limits": {
+      "grad_accum_steps": {"min": 2, "max": 20},
+      "microbatch_size": {"min": 8, "max": 128},
+      "concurrency": {"min": 1, "max": 20}
+    }
+  },
+  "invariants": [
+    "keep_global_batch_stable",
+    "protect_cost_per_step"
+  ],
+  "cooldowns": {
+    "drift_retune_s": 90,
+    "recover_s": 120
+  },
+  "gates": {
+    "default_mode": "plan_verify_only",
+    "apply": false,
+    "require_verify_ok": true,
+    "require_paid": true,
+    "require_kill_switch_off": true
+  }
+}

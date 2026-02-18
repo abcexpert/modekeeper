@@ -1,0 +1,48 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "name": "mk055-demo",
+    "namespace": "mk055-rbac-deny",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.grad_accum_steps": "8"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.grad_accum_steps": "8"
+            }
+          }
+        }
+      }
+    },
+    "reason": "grad_accum_steps"
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "name": "mk055-demo",
+    "namespace": "mk055-rbac-deny",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.microbatch_size": "32"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.microbatch_size": "32"
+            }
+          }
+        }
+      }
+    },
+    "reason": "microbatch_size"
+  }
+]

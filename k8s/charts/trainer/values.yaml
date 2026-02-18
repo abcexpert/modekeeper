@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: modekeeper-trainer
+  tag: dev
+  pullPolicy: IfNotPresent
+
+loopIntervalSeconds: 2
+
+knobs:
+  grad_accum_steps: "4"
+  microbatch_size: "32"

@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+  cat <<'USAGE'
+usage: ./bin/mk-doctor [-h|--help]
+
+Checks local ModeKeeper onboarding prerequisites.
+USAGE
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $arg" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+HOME_DIR="${HOME:-}"
+if [[ -z "$HOME_DIR" ]]; then
+  echo "ERROR: HOME is not set" >&2
+  exit 2
+fi
+
+VENV_DIR="$HOME_DIR/.modekeeper/venv"
+MK_BIN="$VENV_DIR/bin/mk"
+FAILED=0
+
+check() {
+  local label="$1"
+  local ok="$2"
+  local hint="$3"
+  if [[ "$ok" == "1" ]]; then
+    printf 'PASS %s\n' "$label"
+  else
+    printf 'FAIL %s\n' "$label"
+    printf '  hint: %s\n' "$hint"
+    FAILED=1
+  fi
+}
+
+if command -v python3 >/dev/null 2>&1; then
+  check "python3 present" 1 ""
+else
+  check "python3 present" 0 "Install Python 3.10+ and ensure python3 is on PATH."
+fi
+
+if [[ -x "$VENV_DIR/bin/python" ]]; then
+  check "venv exists ($VENV_DIR)" 1 ""
+else
+  check "venv exists ($VENV_DIR)" 0 "Run ./bin/mk-install to create ~/.modekeeper/venv."
+fi
+
+MK_CMD="$(command -v mk || true)"
+if [[ -n "$MK_CMD" ]] && "$MK_CMD" --help >/dev/null 2>&1; then
+  check "mk runnable" 1 ""
+elif [[ -x "$MK_BIN" ]] && "$MK_BIN" --help >/dev/null 2>&1; then
+  check "mk runnable" 0 "ModeKeeper is installed but mk is not on PATH. Add ~/.local/bin to PATH."
+else
+  check "mk runnable" 0 "Run ./bin/mk-install and verify ~/.modekeeper/venv/bin/mk works."
+fi
+
+if command -v kubectl >/dev/null 2>&1; then
+  check "kubectl present" 1 ""
+else
+  check "kubectl present" 0 "Install kubectl and add it to PATH."
+fi
+
+KCFG="${KUBECONFIG:-$HOME_DIR/.kube/config}"
+if [[ -r "$KCFG" ]]; then
+  check "kubeconfig readable ($KCFG)" 1 ""
+else
+  check "kubeconfig readable ($KCFG)" 0 "Set KUBECONFIG or ensure ~/.kube/config exists and is readable."
+fi
+
+if [[ "$FAILED" == "0" ]]; then
+  echo "Doctor result: PASS"
+  exit 0
+fi
+
+echo "Doctor result: FAIL"
+exit 2

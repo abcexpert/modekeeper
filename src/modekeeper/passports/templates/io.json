@@ -1,0 +1,46 @@
+{
+  "schema_version": "passport.v0",
+  "name": "io",
+  "description": "Input/IO-sensitive profile: prioritize straggler suppression and stable data feed.",
+  "allowed_chords": [
+    "NORMAL-HOLD",
+    "BURST-ABSORB",
+    "INPUT-STRAGGLER",
+    "RECOVER",
+    "RELOCK"
+  ],
+  "allowed_actuators": {
+    "hot": [
+      "dataloader_prefetch_factor"
+    ],
+    "cold": [
+      "dataloader_num_workers",
+      "concurrency",
+      "microbatch_size"
+    ]
+  },
+  "limits": {
+    "cooldown_s": 60,
+    "max_delta_per_step": 1,
+    "relock_stable_intervals": 2,
+    "knob_limits": {
+      "dataloader_num_workers": {"min": 2, "max": 16},
+      "dataloader_prefetch_factor": {"min": 1, "max": 8},
+      "concurrency": {"min": 1, "max": 16}
+    }
+  },
+  "invariants": [
+    "keep_global_batch_stable",
+    "protect_input_pipeline"
+  ],
+  "cooldowns": {
+    "input_straggler_s": 60,
+    "recover_s": 120
+  },
+  "gates": {
+    "default_mode": "plan_verify_only",
+    "apply": false,
+    "require_verify_ok": true,
+    "require_kill_switch_off": true
+  }
+}

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trainer
+  namespace: default
+  labels:
+    app: trainer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trainer
+  template:
+    metadata:
+      labels:
+        app: trainer
+      annotations:
+        modekeeper/knob.microbatch_size: "16"
+        modekeeper/knob.grad_accum_steps: "4"
+        modekeeper/telemetry: stdout-jsonl
+    spec:
+      volumes:
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: annotations
+                fieldRef:
+                  fieldPath: metadata.annotations
+      containers:
+        - name: trainer
+          image: modekeeper-trainer:dev
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: podinfo
+              mountPath: /etc/podinfo
+              readOnly: true
+          env:
+            - name: MODEKEEPER_ANNOTATIONS_FILE
+              value: /etc/podinfo/annotations
+            - name: MODEKEEPER_LOOP_INTERVAL_S
+              value: "2"

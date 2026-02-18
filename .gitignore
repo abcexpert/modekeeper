@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+.pytest_cache/
+report/
+*.pyc
+/.local-remote.git/
+
+# python packaging
+*.egg-info/
+
+# local tools
+minikube-linux-amd64
+license_dev.json
+license_dev_public_keys.json
+
+# build artifacts
+/dist/
+/build/
+/*.egg-info/
+
+# packaging scratch
+/src/*.egg-info/
+
+# local secrets (issuer keys, etc)
+secrets/

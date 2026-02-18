@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+TOKEN_FILE="${HOME}/.config/modekeeper/pypi.token"
+DENYLIST_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/mk-release-stub.denylist"
+
+if [[ -z "${TWINE_USERNAME:-}" ]]; then
+  export TWINE_USERNAME="__token__"
+fi
+
+if [[ -z "${TWINE_PASSWORD:-}" && -s "${TOKEN_FILE}" ]]; then
+  export TWINE_PASSWORD="$(tr -d '\r\n' < "${TOKEN_FILE}")"
+fi
+
+if [[ -z "${TWINE_PASSWORD:-}" ]]; then
+  echo "ERROR: TWINE_PASSWORD is unset and no token file at ${TOKEN_FILE}" >&2
+  exit 1
+fi
+
+export TWINE_NON_INTERACTIVE="1"
+
+rm -rf build dist
+find src -maxdepth 3 -type d -name "*.egg-info" -print -exec rm -rf {} +
+
+python -m build --wheel
+
+# Guardrail: public releases are wheel-only (never sdist).
+if compgen -G "dist/*.tar.gz" >/dev/null; then
+  echo "ERROR: sdist detected in dist/ (forbidden for public PyPI):" >&2
+  ls -la dist/*.tar.gz >&2 || true
+  exit 1
+fi
+
+# Guardrail: dist must contain exactly one wheel and nothing else.
+n_whl="$(ls -1 dist/*.whl 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "${n_whl}" != "1" ]]; then
+  echo "ERROR: expected exactly 1 wheel in dist/, got ${n_whl}:" >&2
+  ls -la dist >&2 || true
+  exit 1
+fi
+
+n_all="$(ls -1 dist/* 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "${n_all}" != "${n_whl}" ]]; then
+  echo "ERROR: dist/ contains extra files (forbidden); must be wheel-only:" >&2
+  ls -la dist >&2 || true
+  exit 1
+fi
+
+
+python -m twine check dist/*.whl
+
+MODEKEEPER_DENYLIST_FILE="${DENYLIST_FILE}" python - <<'PY'
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from zipfile import ZipFile
+import sys
+
+wheels = sorted(Path("dist").glob("*.whl"))
+if not wheels:
+    print("ERROR: no wheels found in dist/", file=sys.stderr)
+    raise SystemExit(1)
+
+denylist_path = Path((os.environ.get("MODEKEEPER_DENYLIST_FILE") or "").strip())
+deny_substrings: list[str] = []
+if denylist_path and denylist_path.exists():
+    for raw in denylist_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line and not line.startswith("#"):
+            deny_substrings.append(line)
+
+hard_banned_substrings = [
+    "tests/",
+    ".git",
+    "modekeeper" + "_" + "pro",
+]
+
+violations: list[tuple[str, str]] = []
+for wheel in wheels:
+    with ZipFile(wheel) as zf:
+        for member in zf.namelist():
+            lower_member = member.lower()
+            for banned in hard_banned_substrings:
+                if banned.lower() in lower_member:
+                    violations.append((wheel.name, member))
+                    break
+            else:
+                for banned in deny_substrings:
+                    if banned.lower() in lower_member:
+                        violations.append((wheel.name, member))
+                        break
+
+if violations:
+    print("ERROR: release wheel audit failed; forbidden paths found:", file=sys.stderr)
+    for wheel_name, member in violations:
+        print(f"  - {wheel_name}: {member}", file=sys.stderr)
+    raise SystemExit(1)
+
+print("Wheel audit passed.")
+PY
+
+python -m twine upload --non-interactive dist/*.whl

@@ -1,0 +1,75 @@
+{
+  "schema_version": "v0",
+  "started_at": "2026-02-11T14:42:38+00:00",
+  "finished_at": "2026-02-11T14:42:43+00:00",
+  "duration_s": 5,
+  "out_dir": "report/mk055_verify_rbac_deny_real",
+  "mode": "plan_only",
+  "apply_requested": false,
+  "dry_run": true,
+  "k8s_plan_path": "report/mk055_rbac_patch_denied_real_plan/k8s_plan.json",
+  "k8s_plan_items": 2,
+  "k8s_namespace": "mk055-rbac-deny",
+  "k8s_deployment": "mk055-demo",
+  "kubectl_context": "mk055",
+  "diagnostics": {
+    "kubectl_version": "v1.35.1",
+    "server_version": "v1.35.0",
+    "auth_can_i_patch_deployments": false,
+    "auth_can_i_get_deployments": true,
+    "auth_can_i_patch_deployments_by_namespace": {
+      "mk055-rbac-deny": false
+    },
+    "auth_can_i_get_deployments_by_namespace": {
+      "mk055-rbac-deny": true
+    }
+  },
+  "checks": {
+    "kubectl_present": true,
+    "current_context": {
+      "ok": true,
+      "rc": 0,
+      "stderr": ""
+    },
+    "items": [
+      {
+        "namespace": "mk055-rbac-deny",
+        "name": "mk055-demo",
+        "namespace_exists": true,
+        "deployment_exists": true,
+        "dry_run": {
+          "attempted": true,
+          "mode": "server",
+          "ok": false,
+          "rc": 1,
+          "stderr": "Error from server (Forbidden): deployments.apps \"mk055-demo\" is forbidden: User \"system:serviceaccount:mk055-rbac-deny:mk055-no-patch\" cannot patch resource \"deployments\" in API group \"apps\" in the namespace \"mk055-rbac-deny\""
+        },
+        "auth_can_i_patch_deployments": false,
+        "auth_can_i_get_deployments": true
+      },
+      {
+        "namespace": "mk055-rbac-deny",
+        "name": "mk055-demo",
+        "namespace_exists": true,
+        "deployment_exists": true,
+        "dry_run": {
+          "attempted": true,
+          "mode": "server",
+          "ok": false,
+          "rc": 1,
+          "stderr": "Error from server (Forbidden): deployments.apps \"mk055-demo\" is forbidden: User \"system:serviceaccount:mk055-rbac-deny:mk055-no-patch\" cannot patch resource \"deployments\" in API group \"apps\" in the namespace \"mk055-rbac-deny\""
+        },
+        "auth_can_i_patch_deployments": false,
+        "auth_can_i_get_deployments": true
+      }
+    ]
+  },
+  "verify_blocker": {
+    "kind": "rbac_denied",
+    "index": 0,
+    "namespace": "mk055-rbac-deny",
+    "name": "mk055-demo",
+    "detail": "rc=1; stderr=Error from server (Forbidden): deployments.apps \"mk055-demo\" is forbidden: User \"system:serviceaccount:mk055-rbac-deny:mk055-no-patch\" cannot patch resource ..."
+  },
+  "ok": false
+}

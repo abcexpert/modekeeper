@@ -1,0 +1,4 @@
+{"ts": "2026-02-13T00:00:00Z", "step_time_ms": 120, "loss": 1.0, "gpu_util_pct": 88, "node": "node-a", "gpu_model": "T4"}
+{"ts": "2026-02-13T00:00:01Z", "step_time_ms": 121, "loss": 0.99, "gpu_mem_used_mb": 9000, "gpu_mem_total_mb": 10000, "node_name": "node-b", "gpu_name": "T4"}
+{"ts": "2026-02-13T00:00:02Z", "step_time_ms": 122, "loss": 0.98, "gpu_util_pct": 55, "node": "node-b", "gpu_model": "A100"}
+{"ts": "2026-02-13T00:00:03Z", "step_time_ms": 123, "loss": 0.97, "node": "node-b", "gpu_model": "A100"}

@@ -1,0 +1,306 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+  cat <<'USAGE'
+usage: ./bin/mk-demo-safety-gates [--out DIR]
+
+Runs a non-mutating local demo of apply safety gates.
+Default output dir: report/_demo_safety_gates
+USAGE
+}
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+OUT_DIR="report/_demo_safety_gates"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --out)
+      shift
+      if [[ $# -eq 0 ]]; then
+        echo "missing value for --out" >&2
+        usage >&2
+        exit 2
+      fi
+      OUT_DIR="$1"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "unknown arg: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+MK="$REPO/.venv/bin/mk"
+PY="$REPO/.venv/bin/python"
+if [[ ! -x "$MK" ]]; then
+  echo "missing executable: $MK" >&2
+  exit 2
+fi
+if [[ ! -x "$PY" ]]; then
+  echo "missing executable: $PY" >&2
+  exit 2
+fi
+
+rm -rf "$OUT_DIR"
+mkdir -p "$OUT_DIR"
+
+write_plan() {
+  local plan_path="$1"
+  cat >"$plan_path" <<'JSON'
+[
+  {
+    "namespace": "ns1",
+    "name": "dep1",
+    "patch": {
+      "spec": {
+        "replicas": 2
+      }
+    }
+  }
+]
+JSON
+}
+
+generate_license_materials() {
+  local dir="$1"
+  PYTHONPATH="$REPO/src" "$PY" - "$dir" <<'PY'
+import base64
+import json
+import pathlib
+import sys
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from modekeeper.license.canonical import canonical_json_bytes
+
+out_dir = pathlib.Path(sys.argv[1])
+out_dir.mkdir(parents=True, exist_ok=True)
+
+payload = {
+    "schema_version": "license.v1",
+    "org": "Demo",
+    "issued_at": 1700000000,
+    "expires_at": 4102444800,
+    "entitlements": ["apply", "observe"],
+    "kid": "mk-demo-local",
+}
+
+private_key = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+signature = base64.b64encode(private_key.sign(canonical_json_bytes(payload))).decode("ascii")
+license_data = {**payload, "signature": signature}
+
+valid_keyring = {
+    "mk-demo-local": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+}
+unknown_kid_keyring = {
+    "mk-demo-other": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+}
+
+(out_dir / "license_valid.json").write_text(
+    json.dumps(license_data, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+    encoding="utf-8",
+)
+(out_dir / "license_keys_valid.json").write_text(
+    json.dumps(valid_keyring, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+    encoding="utf-8",
+)
+(out_dir / "license_keys_unknown_kid.json").write_text(
+    json.dumps(unknown_kid_keyring, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+    encoding="utf-8",
+)
+PY
+}
+
+get_report_field() {
+  local report_path="$1"
+  local field_name="$2"
+  "$PY" - "$report_path" "$field_name" <<'PY'
+import json
+import pathlib
+import sys
+
+report_path = pathlib.Path(sys.argv[1])
+field = sys.argv[2]
+data = json.loads(report_path.read_text(encoding="utf-8"))
+value = data.get(field)
+if value is None:
+    print("")
+else:
+    print(str(value))
+PY
+}
+
+run_mk_apply_case() {
+  local case_name="$1"
+  local case_dir="$2"
+  local expected_rc="$3"
+  local expected_reason="$4"
+  shift 4
+
+  mkdir -p "$case_dir/out"
+  write_plan "$case_dir/plan.json"
+
+  local stdout_path="$case_dir/stdout.txt"
+  local stderr_path="$case_dir/stderr.txt"
+  local rc
+
+  (
+    set +e
+    env "$@" "$MK" k8s apply --plan "$case_dir/plan.json" --out "$case_dir/out" >"$stdout_path" 2>"$stderr_path"
+    echo "$?" >"$case_dir/rc.txt"
+  )
+  rc="$(cat "$case_dir/rc.txt")"
+
+  local report_path="$case_dir/out/k8s_apply_latest.json"
+  if [[ ! -f "$report_path" ]]; then
+    echo "$case_name rc=$rc reason=missing_report"
+    return 1
+  fi
+
+  local block_reason
+  local reason
+  block_reason="$(get_report_field "$report_path" "block_reason")"
+  reason="$(get_report_field "$report_path" "reason")"
+  local summary_reason="$block_reason"
+  if [[ -z "$summary_reason" ]]; then
+    summary_reason="$reason"
+  fi
+
+  echo "$case_name rc=$rc reason=$summary_reason"
+
+  if [[ "$rc" != "$expected_rc" ]]; then
+    echo "case $case_name unexpected rc: got=$rc expected=$expected_rc" >&2
+    return 1
+  fi
+  if [[ "$summary_reason" != "$expected_reason" ]]; then
+    echo "case $case_name unexpected reason: got=$summary_reason expected=$expected_reason" >&2
+    return 1
+  fi
+  return 0
+}
+
+run_verify_gate_case() {
+  local case_name="$1"
+  local case_dir="$2"
+  local expected_rc="$3"
+  local expected_reason="$4"
+
+  mkdir -p "$case_dir/out"
+  write_plan "$case_dir/plan.json"
+  cat >"$case_dir/k8s_verify_latest.json" <<'JSON'
+{
+  "schema_version": "v0",
+  "ok": false,
+  "verify_blocker": {
+    "kind": "demo_verify_failed",
+    "index": 0,
+    "namespace": "ns1",
+    "name": "dep1"
+  }
+}
+JSON
+
+  run_mk_apply_case \
+    "$case_name" \
+    "$case_dir" \
+    "$expected_rc" \
+    "$expected_reason" \
+    MODEKEEPER_KILL_SWITCH=0 \
+    MODEKEEPER_PAID=1 \
+    MODEKEEPER_INTERNAL_OVERRIDE=1
+}
+
+generate_license_materials "$OUT_DIR/_shared"
+
+failures=0
+
+case_a_dir="$OUT_DIR/A_missing_license"
+mkdir -p "$case_a_dir"
+cat >"$case_a_dir/k8s_verify_latest.json" <<'JSON'
+{
+  "schema_version": "v0",
+  "ok": true
+}
+JSON
+if ! run_mk_apply_case \
+  "A_missing_license" \
+  "$case_a_dir" \
+  "2" \
+  "license_invalid" \
+  MODEKEEPER_KILL_SWITCH=0 \
+  MODEKEEPER_PAID=0 \
+  MODEKEEPER_INTERNAL_OVERRIDE=0 \
+  MODEKEEPER_LICENSE_PATH="$case_a_dir/does_not_exist.json"
+then
+  failures=$((failures + 1))
+fi
+
+mkdir -p "$OUT_DIR/B_unknown_kid"
+cat >"$OUT_DIR/B_unknown_kid/k8s_verify_latest.json" <<'JSON'
+{
+  "schema_version": "v0",
+  "ok": true
+}
+JSON
+cp "$OUT_DIR/_shared/license_valid.json" "$OUT_DIR/B_unknown_kid/license_unknown_kid.json"
+cp "$OUT_DIR/_shared/license_keys_unknown_kid.json" "$OUT_DIR/B_unknown_kid/license_keys_unknown_kid.json"
+if ! run_mk_apply_case \
+  "B_unknown_kid" \
+  "$OUT_DIR/B_unknown_kid" \
+  "2" \
+  "license_invalid" \
+  MODEKEEPER_KILL_SWITCH=0 \
+  MODEKEEPER_PAID=0 \
+  MODEKEEPER_INTERNAL_OVERRIDE=0 \
+  MODEKEEPER_LICENSE_PATH="$OUT_DIR/B_unknown_kid/license_unknown_kid.json" \
+  MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH="$OUT_DIR/B_unknown_kid/license_keys_unknown_kid.json"
+then
+  failures=$((failures + 1))
+fi
+
+if ! run_verify_gate_case \
+  "C_verify_failed" \
+  "$OUT_DIR/C_verify_failed" \
+  "2" \
+  "verify_failed"
+then
+  failures=$((failures + 1))
+fi
+
+mkdir -p "$OUT_DIR/D_kill_switch"
+cp "$OUT_DIR/_shared/license_valid.json" "$OUT_DIR/D_kill_switch/license_valid.json"
+cp "$OUT_DIR/_shared/license_keys_valid.json" "$OUT_DIR/D_kill_switch/license_keys_valid.json"
+if run_mk_apply_case \
+  "D_kill_switch" \
+  "$OUT_DIR/D_kill_switch" \
+  "2" \
+  "kill_switch" \
+  MODEKEEPER_KILL_SWITCH=1 \
+  MODEKEEPER_PAID=0 \
+  MODEKEEPER_INTERNAL_OVERRIDE=0 \
+  MODEKEEPER_LICENSE_PATH="$OUT_DIR/D_kill_switch/license_valid.json" \
+  MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH="$OUT_DIR/D_kill_switch/license_keys_valid.json"
+then
+  kill_stderr="$(cat "$OUT_DIR/D_kill_switch/stderr.txt")"
+  expected_line="ERROR: MODEKEEPER_KILL_SWITCH=1 blocks apply/mutate operations"
+  if [[ "$kill_stderr" != "$expected_line" ]]; then
+    echo "case D_kill_switch unexpected stderr: got='$kill_stderr'" >&2
+    failures=$((failures + 1))
+  fi
+else
+  failures=$((failures + 1))
+fi
+
+if [[ "$failures" -ne 0 ]]; then
+  echo "FAIL: $failures case(s) did not match expected safety gate outcomes" >&2
+  exit 1
+fi
+
+echo "OK: artifacts saved to $OUT_DIR"

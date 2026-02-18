@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+KUBECTL_WRAPPER="$REPO/bin/kubectl-mk-gpu"
+MK="$REPO/.venv/bin/mk"
+
+KEEP_LICENSE=0
+KEEP_DEPLOY=0
+for arg in "$@"; do
+  case "$arg" in
+    --keep-license) KEEP_LICENSE=1 ;;
+    --keep-deploy) KEEP_DEPLOY=1 ;;
+    *)
+      echo "unknown flag: $arg" >&2
+      echo "usage: $0 [--keep-license] [--keep-deploy]" >&2
+      exit 2
+      ;;
+  esac
+done
+
+cleanup() {
+  if [[ "$KEEP_DEPLOY" != "1" ]]; then
+    "$KUBECTL_WRAPPER" -n default delete deploy trainer --ignore-not-found >/dev/null 2>&1 || true
+  fi
+  if [[ "$KEEP_LICENSE" != "1" ]]; then
+    rm -f "$REPO/license_dev.json" "$REPO/license_dev_public_keys.json" || true
+  fi
+}
+
+trap cleanup EXIT
+
+test -x "$KUBECTL_WRAPPER" || { echo "missing: $KUBECTL_WRAPPER" >&2; exit 2; }
+test -x "$MK" || { echo "missing: $MK" >&2; exit 2; }
+test -f "$REPO/demo/k8s/trainer.yaml" || { echo "missing: demo/k8s/trainer.yaml" >&2; exit 2; }
+
+echo "[1/6] apply trainer"
+"$KUBECTL_WRAPPER" apply -f demo/k8s/trainer.yaml
+
+echo "[2/6] wait rollout"
+"$KUBECTL_WRAPPER" -n default rollout status deploy/trainer --timeout=180s
+
+echo "[3/6] mint dev license"
+./bin/mk-mint-dev-license >/dev/null
+
+echo "[4/6] verify dev license"
+rm -rf report/_license_dev_verify
+MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH=./license_dev_public_keys.json \
+KUBECTL="$PWD/bin/kubectl-mk-gpu" \
+"$MK" license verify --license ./license_dev.json --out report/_license_dev_verify
+
+echo "[5/6] set drift (4/16) then apply"
+"$KUBECTL_WRAPPER" -n default patch deployment/trainer --type merge -p '{"spec":{"template":{"metadata":{"annotations":{"modekeeper/knob.grad_accum_steps":"4","modekeeper/knob.microbatch_size":"16"}}}}}'
+rm -rf report/_cl_k8s_apply_paid
+MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH=./license_dev_public_keys.json \
+MODEKEEPER_LICENSE_PATH=./license_dev.json \
+KUBECTL="$PWD/bin/kubectl-mk-gpu" \
+"$MK" closed-loop run --scenario drift --apply --out report/_cl_k8s_apply_paid
+
+echo "[6/8] wait rollout after apply"
+"$KUBECTL_WRAPPER" -n default rollout status deploy/trainer --timeout=180s
+
+echo "[7/8] show resulting annotations"
+"$KUBECTL_WRAPPER" -n default get deploy trainer -o jsonpath='{.spec.template.metadata.annotations}{"\n"}'
+
+echo "[8/8] show trainer logs tail"
+"$KUBECTL_WRAPPER" -n default logs -l app=trainer -c trainer --tail=80
+
+echo "OK: report/_license_dev_verify + report/_cl_k8s_apply_paid"

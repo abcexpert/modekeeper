@@ -1,0 +1,50 @@
+{
+  "schema_version": "passport.v0",
+  "name": "perf",
+  "description": "Performance-oriented profile: safe chords with wider step windows and faster relock.",
+  "allowed_chords": [
+    "NORMAL-HOLD",
+    "DRIFT-RETUNE",
+    "BURST-ABSORB",
+    "INPUT-STRAGGLER",
+    "RECOVER",
+    "RELOCK"
+  ],
+  "allowed_actuators": {
+    "hot": [
+      "concurrency",
+      "dataloader_prefetch_factor"
+    ],
+    "cold": [
+      "grad_accum_steps",
+      "microbatch_size",
+      "dataloader_num_workers"
+    ]
+  },
+  "limits": {
+    "cooldown_s": 45,
+    "max_delta_per_step": 2,
+    "relock_stable_intervals": 2,
+    "knob_limits": {
+      "grad_accum_steps": {"min": 1, "max": 16},
+      "microbatch_size": {"min": 8, "max": 128},
+      "concurrency": {"min": 1, "max": 32}
+    }
+  },
+  "invariants": [
+    "keep_global_batch_stable",
+    "respect_memory_guardrails"
+  ],
+  "cooldowns": {
+    "drift_retune_s": 60,
+    "burst_absorb_s": 45,
+    "recover_s": 90
+  },
+  "gates": {
+    "default_mode": "plan_verify_only",
+    "apply": false,
+    "require_verify_ok": true,
+    "require_paid": true,
+    "require_kill_switch_off": true
+  }
+}

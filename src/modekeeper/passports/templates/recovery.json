@@ -1,0 +1,45 @@
+{
+  "schema_version": "passport.v0",
+  "name": "recovery",
+  "description": "Incident recovery profile: focus on RECOVER/RELOCK with strict anti-oscillation limits.",
+  "allowed_chords": [
+    "NORMAL-HOLD",
+    "RECOVER",
+    "RELOCK",
+    "INPUT-STRAGGLER"
+  ],
+  "allowed_actuators": {
+    "hot": [
+      "concurrency"
+    ],
+    "cold": [
+      "grad_accum_steps",
+      "microbatch_size",
+      "dataloader_prefetch_factor"
+    ]
+  },
+  "limits": {
+    "cooldown_s": 120,
+    "max_delta_per_step": 1,
+    "relock_stable_intervals": 4,
+    "knob_limits": {
+      "grad_accum_steps": {"min": 2, "max": 12},
+      "microbatch_size": {"min": 8, "max": 96},
+      "concurrency": {"min": 1, "max": 12}
+    }
+  },
+  "invariants": [
+    "keep_global_batch_stable",
+    "stability_before_relock"
+  ],
+  "cooldowns": {
+    "recover_s": 180,
+    "relock_s": 240
+  },
+  "gates": {
+    "default_mode": "plan_verify_only",
+    "apply": false,
+    "require_verify_ok": true,
+    "require_kill_switch_off": true
+  }
+}

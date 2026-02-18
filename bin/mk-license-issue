@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Issue a signed license.v1 JSON using an Ed25519 issuer private key."""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import re
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+_RFC3339_UTC_Z_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _ensure_venv_and_imports(repo: Path) -> None:
+    venv_py = (repo / ".venv/bin/python").resolve()
+    cur_py = Path(sys.executable).resolve()
+    if venv_py.exists() and cur_py != venv_py:
+        os.execv(str(venv_py), [str(venv_py), str(__file__), *sys.argv[1:]])
+
+    src = (repo / "src").resolve()
+    if src.exists() and str(src) not in sys.path:
+        sys.path.insert(0, str(src))
+
+
+def _parse_rfc3339_utc_z(raw: str) -> int:
+    value = raw.strip()
+    if not _RFC3339_UTC_Z_RE.match(value):
+        raise ValueError("expected RFC3339 UTC timestamp ending with Z, e.g. 2030-01-01T00:00:00Z")
+    iso = value[:-1] + "+00:00"
+    dt = datetime.fromisoformat(iso)
+    if dt.tzinfo is None:
+        raise ValueError("timestamp must include UTC Z suffix")
+    return int(dt.astimezone(timezone.utc).timestamp())
+
+
+def _parse_entitlements(raw: str) -> list[str]:
+    values = [part.strip() for part in raw.split(",")]
+    items = [part for part in values if part]
+    if not items:
+        raise ValueError("at least one entitlement is required")
+    return items
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Issue a signed license.v1 file.")
+    parser.add_argument("--kid", required=True, help="Key identifier.")
+    parser.add_argument("--org", required=True, help="Organization name.")
+    parser.add_argument("--expires", required=True, help="RFC3339 UTC timestamp with Z suffix.")
+    parser.add_argument("--entitlements", required=True, help="Comma-separated entitlements.")
+    parser.add_argument("--out", required=True, help="Output license JSON path.")
+    parser.add_argument(
+        "--priv",
+        help="Issuer private key path override. Defaults to MODEKEEPER_ISSUER_PRIVKEY_PATH.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    repo = _repo_root()
+    _ensure_venv_and_imports(repo)
+    args = _parse_args()
+
+    private_path_raw = args.priv or os.environ.get("MODEKEEPER_ISSUER_PRIVKEY_PATH")
+    if not private_path_raw:
+        raise SystemExit("private key path is required via --priv or MODEKEEPER_ISSUER_PRIVKEY_PATH")
+
+    out_path = Path(args.out)
+    private_path = Path(private_path_raw)
+    kid = args.kid.strip()
+    org = args.org.strip()
+    if not kid:
+        raise SystemExit("--kid must be non-empty")
+    if not org:
+        raise SystemExit("--org must be non-empty")
+
+    try:
+        expires_at = _parse_rfc3339_utc_z(args.expires)
+        entitlements = _parse_entitlements(args.entitlements)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from modekeeper.license.canonical import canonical_json_bytes  # type: ignore
+
+    private_raw = private_path.read_bytes()
+    if len(private_raw) != 32:
+        raise SystemExit(f"issuer private key must be 32 raw bytes: {private_path}")
+    private_key = Ed25519PrivateKey.from_private_bytes(private_raw)
+
+    issued_at = int(time.time())
+    if expires_at <= issued_at:
+        raise SystemExit("--expires must be in the future")
+
+    payload = {
+        "schema_version": "license.v1",
+        "org": org,
+        "issued_at": issued_at,
+        "expires_at": expires_at,
+        "entitlements": entitlements,
+        "bindings": {},
+        "kid": kid,
+    }
+    signature = base64.b64encode(private_key.sign(canonical_json_bytes(payload))).decode("ascii")
+    license_data = {**payload, "signature": signature}
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(
+        json.dumps(license_data, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

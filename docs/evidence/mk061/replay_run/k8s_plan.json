@@ -1,0 +1,94 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "namespace": "default",
+    "name": "trainer",
+    "reason": "grad_accum_steps",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.grad_accum_steps": "8"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.grad_accum_steps": "8"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "namespace": "default",
+    "name": "trainer",
+    "reason": "microbatch_size",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.microbatch_size": "32"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.microbatch_size": "32"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "namespace": "default",
+    "name": "trainer",
+    "reason": "dataloader_prefetch_factor",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.dataloader_prefetch_factor": "2"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.dataloader_prefetch_factor": "2"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "namespace": "default",
+    "name": "trainer",
+    "reason": "concurrency",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.concurrency": "4"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.concurrency": "4"
+            }
+          }
+        }
+      }
+    }
+  }
+]

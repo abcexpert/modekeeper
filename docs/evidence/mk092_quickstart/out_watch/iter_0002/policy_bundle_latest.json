@@ -1,0 +1,26 @@
+{
+  "bundle_version": 1,
+  "created_at": 1771053576,
+  "inputs": {
+    "chord_catalog_sha256": "cdd144734cecd5bdfebd224f286856f31c6153f4bd693fb6ff9cea11da1ba63e",
+    "passport_id": null,
+    "passport_sha256": null
+  },
+  "mk_version": "0.1.0",
+  "policy": {
+    "id": "chord",
+    "params": {},
+    "version": "v1"
+  },
+  "provenance": {
+    "git_commit": "4f00b7cf077f76e5c67923a30aac818b8bf7ed8f",
+    "git_dirty": true,
+    "host": "DESKTOP-A3A6B1U"
+  },
+  "rollback": {
+    "from_verify_report": null,
+    "mode": "skeleton",
+    "rollback_plan_path": null
+  },
+  "schema_version": "policy_bundle.v1"
+}

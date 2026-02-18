@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+usage() {
+  cat <<'EOF'
+usage: ./bin/mk-demo-sales [--keep-license] [--keep-deploy] [-h|--help]
+
+Runs:
+  1) ./bin/mk-demo-safety-gates
+  2) ./bin/mk-demo-k8s-drift
+
+Flags:
+  --keep-license  Keep dev license files after demo cleanup.
+  --keep-deploy   Keep trainer deployment/resources after demo cleanup.
+  -h, --help      Show this help and exit.
+EOF
+}
+
+KEEP_LICENSE=0
+KEEP_DEPLOY=0
+for arg in "$@"; do
+  case "$arg" in
+    --keep-license) KEEP_LICENSE=1 ;;
+    --keep-deploy) KEEP_DEPLOY=1 ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "unknown flag: $arg" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ ! -x "$REPO/.venv/bin/mk" || ! -x "$REPO/.venv/bin/python" ]]; then
+  echo "ERROR: this demo must be run on a developer machine (WSL) with a local .venv." >&2
+  echo "Missing required executables: $REPO/.venv/bin/mk and/or $REPO/.venv/bin/python" >&2
+  exit 2
+fi
+
+drift_args=()
+if [[ "$KEEP_LICENSE" == "1" ]]; then
+  drift_args+=(--keep-license)
+fi
+if [[ "$KEEP_DEPLOY" == "1" ]]; then
+  drift_args+=(--keep-deploy)
+fi
+
+echo "== Stage 1: safety gates =="
+./bin/mk-demo-safety-gates
+
+echo "== Stage 2: k8s drift/apply =="
+./bin/mk-demo-k8s-drift "${drift_args[@]}"
+
+echo "safety artifacts: report/_demo_safety_gates"
+echo "drift/apply artifacts: report/_license_dev_verify report/_cl_k8s_apply_paid"

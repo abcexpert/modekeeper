@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+  cat <<'USAGE'
+usage: ./bin/mk-buyer-pack [--out DIR]
+
+Generate a customer-safe Buyer Proof Pack (read-only evidence only).
+Default output dir: report/buyer_pack
+USAGE
+}
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+OUT_DIR="report/buyer_pack"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --out)
+      shift
+      if [[ $# -eq 0 ]]; then
+        echo "ERROR: missing value for --out" >&2
+        usage >&2
+        exit 2
+      fi
+      OUT_DIR="$1"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+MK="$REPO/.venv/bin/mk"
+if [[ ! -x "$MK" ]]; then
+  MK="$(command -v mk || true)"
+fi
+if [[ -z "$MK" ]] || [[ ! -x "$MK" ]]; then
+  echo "ERROR: mk not found; expected $REPO/.venv/bin/mk or mk on PATH" >&2
+  exit 2
+fi
+
+require_file() {
+  local path="$1"
+  if [[ ! -f "$path" ]]; then
+    echo "ERROR: expected file is missing: $path" >&2
+    exit 2
+  fi
+}
+
+require_dir() {
+  local path="$1"
+  if [[ ! -d "$path" ]]; then
+    echo "ERROR: expected directory is missing: $path" >&2
+    exit 2
+  fi
+}
+
+require_any_file() {
+  local found=0
+  for path in "$@"; do
+    if [[ -f "$path" ]]; then
+      found=1
+      break
+    fi
+  done
+  if [[ "$found" != "1" ]]; then
+    echo "ERROR: expected one of these files, but none were found:" >&2
+    for path in "$@"; do
+      echo "  - $path" >&2
+    done
+    exit 2
+  fi
+}
+
+echo "[1/4] reset output dir: $OUT_DIR"
+rm -rf "$OUT_DIR"
+mkdir -p "$OUT_DIR"
+
+echo "[2/4] mk doctor"
+"$MK" doctor
+
+echo "[3/4] mk quickstart (read-only)"
+"$MK" quickstart --out "$OUT_DIR"
+
+echo "[4/4] mk closed-loop run --dry-run (extra decision evidence)"
+"$MK" closed-loop run --scenario drift --dry-run --out "$OUT_DIR/dryrun"
+
+require_dir "$OUT_DIR/plan"
+require_file "$OUT_DIR/plan/closed_loop_latest.json"
+require_any_file "$OUT_DIR/plan/decision_trace_latest.jsonl" "$OUT_DIR/plan/explain.jsonl"
+require_dir "$OUT_DIR/verify"
+require_file "$OUT_DIR/verify/k8s_verify_latest.json"
+require_dir "$OUT_DIR/export"
+require_file "$OUT_DIR/dryrun/closed_loop_latest.json"
+require_file "$OUT_DIR/dryrun/k8s_plan.json"
+require_any_file "$OUT_DIR/dryrun/decision_trace_latest.jsonl" "$OUT_DIR/dryrun/explain.jsonl"
+
+echo "OK: Buyer Proof Pack created at $OUT_DIR"
+echo "Share: $OUT_DIR/**"

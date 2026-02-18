@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mk055-rbac-deny
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mk055-no-patch
+  namespace: mk055-rbac-deny
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mk055-deployments-read
+  namespace: mk055-rbac-deny
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mk055-deployments-read
+  namespace: mk055-rbac-deny
+subjects:
+- kind: ServiceAccount
+  name: mk055-no-patch
+  namespace: mk055-rbac-deny
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mk055-deployments-read
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mk055-demo
+  namespace: mk055-rbac-deny
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mk055-demo
+  template:
+    metadata:
+      labels:
+        app: mk055-demo
+    spec:
+      serviceAccountName: mk055-no-patch
+      containers:
+      - name: web
+        image: nginx:alpine
+        ports:
+        - containerPort: 80

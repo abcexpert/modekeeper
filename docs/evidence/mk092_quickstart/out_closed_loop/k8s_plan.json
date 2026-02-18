@@ -1,0 +1,25 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "namespace": "default",
+    "name": "trainer",
+    "reason": "microbatch_size",
+    "patch": {
+      "metadata": {
+        "annotations": {
+          "modekeeper/knob.microbatch_size": "16"
+        }
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "annotations": {
+              "modekeeper/knob.microbatch_size": "16"
+            }
+          }
+        }
+      }
+    }
+  }
+]

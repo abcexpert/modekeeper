@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+HOME_DIR="${HOME:-}"
+BASE_DIR="${HOME_DIR}/.modekeeper"
+VENV_DIR="${BASE_DIR}/venv"
+LOCAL_BIN_DIR="${HOME_DIR}/.local/bin"
+MK_BIN="${VENV_DIR}/bin/mk"
+MK_LINK="${LOCAL_BIN_DIR}/mk"
+TMP_DIR=""
+REPO_BASE_URL="${MODEKEEPER_REPO_BASE_URL:-}"
+if [[ -n "${REPO_BASE_URL}" ]]; then
+  REPO_BASE_URL="${REPO_BASE_URL%/}"
+fi
+
+cleanup() {
+  if [[ -n "${TMP_DIR}" && -d "${TMP_DIR}" ]]; then
+    rm -rf "${TMP_DIR}"
+  fi
+}
+trap cleanup EXIT
+
+repo_fetch_latest_tsv() {
+  local latest_json_url="$1"
+  "${VENV_PY}" -c 'import json, sys, urllib.error, urllib.request
+try:
+  data = json.load(urllib.request.urlopen(sys.argv[1], timeout=10))
+except urllib.error.HTTPError as exc:
+  raise SystemExit(f"failed to fetch latest.json (HTTP {exc.code})")
+except Exception:
+  raise SystemExit("failed to fetch latest.json")
+wheel_url = data.get("wheel_url") or ""
+wheel_object = data.get("wheel_object") or ""
+sha256 = data.get("sha256") or ""
+print(f"{wheel_url}\x1f{wheel_object}\x1f{sha256}")' "${latest_json_url}"
+}
+
+repo_download_verify() {
+  local wheel_url="$1"
+  local expected_sha256="$2"
+  local out_path="$3"
+  "${VENV_PY}" -c 'import hashlib, os, sys, urllib.error, urllib.request
+url = sys.argv[1]
+expected = (sys.argv[2] or "").strip().lower()
+out_path = sys.argv[3]
+if not expected:
+  raise SystemExit("missing expected sha256")
+h = hashlib.sha256()
+try:
+  with urllib.request.urlopen(url, timeout=60) as r, open(out_path, "wb") as f:
+    while True:
+      chunk = r.read(1024 * 1024)
+      if not chunk:
+        break
+      h.update(chunk)
+      f.write(chunk)
+except urllib.error.HTTPError as exc:
+  try:
+    os.remove(out_path)
+  except FileNotFoundError:
+    pass
+  raise SystemExit(f"download failed (HTTP {exc.code})")
+except Exception:
+  try:
+    os.remove(out_path)
+  except FileNotFoundError:
+    pass
+  raise SystemExit("download failed")
+actual = h.hexdigest().lower()
+if actual != expected:
+  try:
+    os.remove(out_path)
+  except FileNotFoundError:
+    pass
+  raise SystemExit(f"sha256 mismatch for {url}: expected {expected}, got {actual}")' "${wheel_url}" "${expected_sha256}" "${out_path}"
+}
+
+url_basename() {
+  local url="$1"
+  url="${url%%#*}"
+  url="${url%%\?*}"
+  basename "${url}"
+}
+
+if [[ -z "${HOME_DIR}" ]]; then
+  echo "ERROR: HOME is not set" >&2
+  exit 2
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: python3 is required" >&2
+  exit 2
+fi
+
+mkdir -p "${BASE_DIR}"
+if [[ ! -d "${VENV_DIR}" ]]; then
+  python3 -m venv "${VENV_DIR}"
+fi
+
+VENV_PY="${VENV_DIR}/bin/python"
+if [[ ! -x "${VENV_PY}" ]]; then
+  echo "ERROR: virtualenv python not found at ${VENV_PY}" >&2
+  exit 2
+fi
+
+"${VENV_PY}" -m pip install -U pip
+
+if [[ -n "${MODEKEEPER_WHEEL:-}" ]]; then
+  "${VENV_PY}" -m pip install -U "${MODEKEEPER_WHEEL}"
+elif [[ -n "${REPO_BASE_URL}" ]]; then
+  PUBLIC_LATEST_JSON_URL="${REPO_BASE_URL}/modekeeper/latest.json"
+  PUBLIC_LATEST_TSV="$(repo_fetch_latest_tsv "${PUBLIC_LATEST_JSON_URL}")"
+  IFS=$'\x1f' read -r PUBLIC_WHEEL_URL PUBLIC_WHEEL_OBJECT PUBLIC_SHA256 <<< "${PUBLIC_LATEST_TSV}"
+  if [[ -z "${PUBLIC_WHEEL_OBJECT}" || -z "${PUBLIC_SHA256}" ]]; then
+    echo "ERROR: invalid repo latest.json at ${PUBLIC_LATEST_JSON_URL} (wheel_object and sha256 required)" >&2
+    exit 2
+  fi
+  if [[ -z "${PUBLIC_WHEEL_URL}" ]]; then
+    PUBLIC_WHEEL_URL="${REPO_BASE_URL}/modekeeper/${PUBLIC_WHEEL_OBJECT}"
+  fi
+  if [[ -z "${TMP_DIR}" ]]; then
+    TMP_DIR="$(mktemp -d)"
+  fi
+  PUBLIC_WHEEL_PATH="${TMP_DIR}/$(url_basename "${PUBLIC_WHEEL_URL}")"
+  repo_download_verify "${PUBLIC_WHEEL_URL}" "${PUBLIC_SHA256}" "${PUBLIC_WHEEL_PATH}"
+  "${VENV_PY}" -m pip install -U --no-cache-dir "${PUBLIC_WHEEL_PATH}"
+else
+  LATEST_PYPI_VERSION_AND_WHEEL="$("${VENV_PY}" -c 'import json, urllib.request; from pip._vendor.packaging.version import InvalidVersion, Version; d=json.load(urllib.request.urlopen("https://pypi.org/pypi/modekeeper/json")); best_v=None; best_url=""; releases=d.get("releases", {});
+for raw_v, files in releases.items():
+  try: v=Version(raw_v)
+  except InvalidVersion: continue
+  wheels=[f for f in files if f.get("filename","").endswith(".whl") and f.get("url")]
+  if not wheels: continue
+  preferred=[f for f in wheels if "py3-none-any.whl" in f.get("filename","")]
+  url=(preferred or wheels)[0]["url"]
+  if best_v is None or v > best_v: best_v=v; best_url=url
+print(f"{best_v}\t{best_url}" if best_v is not None else "\t")')"
+  IFS=$'\t' read -r LATEST_PYPI_VERSION LATEST_WHEEL_URL <<< "${LATEST_PYPI_VERSION_AND_WHEEL}"
+  if [[ -z "${LATEST_PYPI_VERSION}" || -z "${LATEST_WHEEL_URL}" ]]; then
+    echo "ERROR: could not find latest wheel URL for modekeeper from PyPI JSON releases" >&2
+    exit 2
+  fi
+  "${VENV_PY}" -m pip install -U --no-cache-dir "${LATEST_WHEEL_URL}"
+fi
+
+if [[ ! -x "${MK_BIN}" ]]; then
+  echo "ERROR: mk entrypoint missing at ${MK_BIN}" >&2
+  exit 2
+fi
+
+mkdir -p "${LOCAL_BIN_DIR}"
+ln -sfn "${MK_BIN}" "${MK_LINK}"
+
+echo "Installed: ${MK_LINK} -> ${MK_BIN}"
+if ! "${MK_BIN}" doctor --help >/dev/null 2>&1; then
+  echo "ERROR: installed mk does not support 'doctor' (expected modekeeper>=0.1.2 from PyPI)" >&2
+  exit 2
+fi
+
+echo "Next steps:"
+echo "  mk doctor"
+echo "  mk --help"

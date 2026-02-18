@@ -1,0 +1,102 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Public boundary guard
+        run: |
+          set -Eeuo pipefail
+          pat_a='modekeeper'"_pro"
+          pat_b='/'"pro"'/'
+          if git ls-files -z | xargs -0 rg -n -e "$pat_a" -e "$pat_b"; then
+            echo "ERROR: public boundary guard failed" >&2
+            exit 1
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build tools
+        run: |
+          set -Eeuo pipefail
+          python -m pip install -U pip build twine pytest
+
+      - name: Build wheel
+        run: |
+          set -Eeuo pipefail
+          rm -rf dist build
+          python -m build --wheel
+
+      - name: Twine check
+        run: |
+          set -Eeuo pipefail
+          python -m twine check dist/*.whl
+
+      - name: Wheel audit
+        run: |
+          set -Eeuo pipefail
+          MODEKEEPER_DENYLIST_FILE="bin/mk-release-stub.denylist" python - <<'PY'
+          from __future__ import annotations
+
+          import os
+          from pathlib import Path
+          from zipfile import ZipFile
+          import sys
+
+          wheels = sorted(Path("dist").glob("*.whl"))
+          if not wheels:
+              print("ERROR: no wheels found in dist/", file=sys.stderr)
+              raise SystemExit(1)
+
+          denylist_path = Path((os.environ.get("MODEKEEPER_DENYLIST_FILE") or "").strip())
+          deny_substrings: list[str] = []
+          if denylist_path and denylist_path.exists():
+              for raw in denylist_path.read_text(encoding="utf-8").splitlines():
+                  line = raw.strip()
+                  if line and not line.startswith("#"):
+                      deny_substrings.append(line)
+
+          hard_banned_substrings = [
+              "tests/",
+              ".git",
+              "modekeeper" + "_" + "pro",
+          ]
+
+          violations: list[tuple[str, str]] = []
+          for wheel in wheels:
+              with ZipFile(wheel) as zf:
+                  for member in zf.namelist():
+                      lower_member = member.lower()
+                      for banned in hard_banned_substrings:
+                          if banned.lower() in lower_member:
+                              violations.append((wheel.name, member))
+                              break
+                      else:
+                          for banned in deny_substrings:
+                              if banned.lower() in lower_member:
+                                  violations.append((wheel.name, member))
+                                  break
+
+          if violations:
+              print("ERROR: release wheel audit failed; forbidden paths found:", file=sys.stderr)
+              for wheel_name, member in violations:
+                  print(f"  - {wheel_name}: {member}", file=sys.stderr)
+              raise SystemExit(1)
+
+          print("Wheel audit passed.")
+          PY
+
+      - name: Run version test
+        run: |
+          set -Eeuo pipefail
+          pytest -q tests/test_cli_version.py

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: trainer
+description: Minimal trainer chart for modekeeper knob visibility
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
