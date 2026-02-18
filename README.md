@@ -6,6 +6,8 @@
 ModeKeeper is a verify-first operations agent for SRE, MLOps, and FinOps teams. The public runtime is customer-safe and read-only by default; apply is licensed and hard-gated.
 
 ## Contact
+Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
+
 
 - Questions / feedback: GitHub Issues (preferred) and Discussions.
 - Security issues: please use GitHub Security Advisories (private disclosure). See `.github/SECURITY.md`.
