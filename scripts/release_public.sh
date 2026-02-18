@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/release_public.sh [--dry-run] [--help]
+
+Options:
+  --dry-run  Run checks and build through procurement pack verification only.
+             Skip git tag creation, push, and GitHub Release creation.
+  --help     Show this help message and exit.
+EOF
+}
+
 on_err() {
   local exit_code=$?
   local line_no=${1:-unknown}
@@ -16,6 +27,25 @@ on_signal() {
 trap 'on_err $LINENO' ERR
 trap 'on_signal INT' INT
 trap 'on_signal TERM' TERM
+
+dry_run=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [[ "$(pwd)" != "$(git rev-parse --show-toplevel 2>/dev/null || true)" ]]; then
   echo "ERROR: run this script from the repository root." >&2
@@ -101,6 +131,14 @@ fi
 if [[ ! -f "${PACK_CHECKSUMS}" ]]; then
   echo "ERROR: expected release asset not found: ${PACK_CHECKSUMS}" >&2
   exit 1
+fi
+
+if [[ "${dry_run}" -eq 1 ]]; then
+  echo
+  echo "dry-run ok"
+  echo "Tag: ${TAG}"
+  echo "Assets: ${PACK_TARBALL}, ${PACK_CHECKSUMS}"
+  exit 0
 fi
 
 echo "Creating annotated tag ${TAG} on HEAD..."
