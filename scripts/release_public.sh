@@ -83,12 +83,26 @@ if [[ "${local_main_sha}" != "${origin_main_sha}" ]]; then
 fi
 
 version="$(python3 - <<'PY'
-import tomllib
 from pathlib import Path
+import re
 
-pyproject = Path("pyproject.toml")
-data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-print(data["project"]["version"])
+text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+# Prefer tomllib when available (py>=3.11), but support py3.10 without extra deps.
+try:
+    import tomllib  # type: ignore[attr-defined]
+    data = tomllib.loads(text)
+    print(data["project"]["version"])
+except ModuleNotFoundError:
+    m = re.search(r'(?ms)^\[project\]\s*(.*?)(?=^\[|\Z)', text)
+    if not m:
+        raise SystemExit("no [project] section in pyproject.toml")
+    sec = m.group(1)
+    m2 = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"\s*$', sec)
+    if not m2:
+        raise SystemExit("no [project].version in pyproject.toml")
+    print(m2.group(1))
+
 PY
 )"
 
