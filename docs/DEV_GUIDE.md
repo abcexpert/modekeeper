@@ -17,9 +17,9 @@ python -m pip install -e .[dev]
 
 ### Quick sanity
 ```bash
-mk --version
 mk --help
-mk doctor
+mk observe --help
+mk closed-loop --help
 ```
 
 ## 2) Running tests
@@ -101,6 +101,6 @@ sha256sum -c checksums.sha256
 - `MODEKEEPER_PAID`
 
 ## 6) Troubleshooting baseline
-- `mk doctor` should pass before k8s-oriented tests.
+- `mk k8s preflight --help` and `mk k8s verify --help` should work before k8s-oriented tests.
 - Use isolated output dirs (`report/_...`) for deterministic local runs.
 - If k8s verify fails, inspect `explain.jsonl` first, then `*_latest.json`.

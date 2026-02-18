@@ -2,34 +2,26 @@
 
 This is the single recommended customer flow.
 
-## 1) Install + health check
+## 1) Install + command check
 
 ```bash
-./bin/mk-install
-./bin/mk-doctor
+python3 -m pip install -U modekeeper
+mk --help
 ```
 
-Expected: `mk-doctor` returns `0` and reports PASS for all checks.
+Expected: `mk --help` exits with `0`.
 
 ## 2) Read-only onboarding (no cluster mutations)
 
 ```bash
-NS=default
-DEPLOY=trainer
-mk quickstart --k8s-namespace "$NS" --k8s-deployment "$DEPLOY" --out report/quickstart
-```
-
-This command is safe-by-default and does not run `kubectl patch`.
-
-What it runs internally:
-
-```bash
-mk doctor
-mk closed-loop run --scenario drift --k8s-namespace "$NS" --k8s-deployment "$DEPLOY" --dry-run --out report/quickstart/plan
+mk observe --source synthetic --duration 30s --record-raw report/quickstart/observe/observe_raw.jsonl --out report/quickstart/observe
+mk closed-loop run --scenario drift --observe-source synthetic --observe-duration 30s --dry-run --out report/quickstart/plan
 PLAN="$(python3 -c 'import json; print(json.load(open("report/quickstart/plan/closed_loop_latest.json", encoding="utf-8"))["k8s_plan_path"])')"
 mk k8s verify --plan "$PLAN" --out report/quickstart/verify
 mk export bundle --in report/quickstart --out report/quickstart/export
 ```
+
+This flow is verify-first and non-mutating (`observe`, `dry-run`, `verify`, `export` only).
 
 ## 3) Paid mode gate: verify license first
 

@@ -4,12 +4,9 @@ Source of truth: `src/modekeeper/cli.py` (`argparse`).
 
 ## Entrypoint
 - Command: `mk`
-- Global flag: `--version`
 - Help: `mk --help`
 
 Top-level commands:
-- `doctor`
-- `quickstart`
 - `eval`
 - `observe`
 - `closed-loop`
@@ -23,47 +20,6 @@ Top-level commands:
 - `k8s`
 
 ## Commands and flags
-
-### `mk doctor`
-Flags:
-- none
-
-Behavior:
-- checks local prerequisites (python/mk/kubectl/kubeconfig readability)
-- prints PASS/FAIL lines
-
-Artifacts:
-- none (stdout/stderr only)
-
-### `mk quickstart`
-Flags:
-- `--out` (default: `report/quickstart_<UTC ts>`)
-- `--k8s-namespace` (default: `default`)
-- `--k8s-deployment` (default: `trainer`)
-- `--scenario` (default: `drift`)
-- `--observe-source` (`synthetic|file|k8s|k8s-logs`, default: `synthetic`)
-- `--observe-path`
-- `--observe-duration` (default: `60s`)
-- `--observe-container` (default: `auto`)
-- `--policy` (`chord|scalar`, default: `chord`)
-
-Artifacts under `<out>/`:
-- `doctor/doctor.json`
-- `doctor/summary.md`
-- `plan/closed_loop_latest.json`
-- `plan/closed_loop_<ts>.json`
-- `plan/summary.md`
-- `plan/k8s_plan.json`
-- `plan/k8s_plan.kubectl.sh`
-- `plan/decision_trace_latest.jsonl`
-- `plan/policy_bundle_latest.json`
-- `verify/k8s_verify_latest.json`
-- `verify/k8s_verify_<ts>.json`
-- `verify/explain.jsonl`
-- `export/bundle_manifest.json`
-- `export/bundle.tar.gz`
-- `export/bundle_summary.md`
-- `summary.md`
 
 ### `mk eval file`
 Flags:
@@ -359,4 +315,3 @@ Artifacts:
 - `MODEKEEPER_LICENSE_PATH`: license path resolution fallback.
 - `MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH`: keyring file override for license verification.
 - `MODEKEEPER_INTERNAL_OVERRIDE`, `MODEKEEPER_PAID`: internal override path used in gating logic.
-
