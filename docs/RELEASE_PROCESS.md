@@ -1,93 +1,55 @@
-# Release Process (public repository)
+# Release Process (public showroom)
 
-This document defines the canonical release sequence for the public package.
+This is the canonical public release sequence.
 
-## 1) Version bump
+## 1) Version bump + changelog in PR
 
-Update version in all required files:
-- `pyproject.toml` (`[project].version`)
-- `src/modekeeper/__init__.py` (`__version__`)
-- `CHANGELOG.md` (new section for target version/date)
+Prepare a PR that includes:
+- version bump in `pyproject.toml` (`[project].version`)
+- changelog update for that version/date in `CHANGELOG.md`
 
-## 2) Pre-PR checks
+Reliable version check from source (no installed package required):
 
 ```bash
-python -m pip install -e .[dev]
-pytest -q
-PYTHONPATH=src python -m modekeeper.cli --version
-PYTHONPATH=src python -m modekeeper.cli --help
+python3 - <<'PY'
+import tomllib
+from pathlib import Path
+print(tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"])
+PY
 ```
 
-Optional but recommended:
+Optional installed-package check (only where package is installed):
+
 ```bash
-./bin/mk-procurement-pack
+python3 -c 'import importlib.metadata as m; print(m.version("modekeeper"))'
 ```
 
-## 3) PR stage
-- Open PR with only intended release changes.
-- Ensure CI is green.
-- Confirm no logic drift outside release scope.
+## 2) Merge PR to `main`
 
-## 4) Merge to main
-- Merge PR after review and CI pass.
-- Pull latest `main` locally before publishing.
+After review and CI pass, merge the PR and ensure local `main` is current.
 
-## 5) Publish (wheel-only)
+## 3) Run release script on `main`
 
-Canonical command:
+From repo root:
+
 ```bash
-bin/mk-release-stub
+./scripts/release_public.sh
 ```
 
-What the script enforces:
-- builds wheel only (`python -m build --wheel`)
-- rejects sdist in `dist/`
-- requires exactly one wheel in `dist/`
-- runs `twine check`
-- audits wheel contents for forbidden paths (`tests/`, `.git`, `modekeeper_pro`, and denylist entries)
-- uploads wheel via `twine upload dist/*.whl`
+The script enforces:
+- clean git working tree
+- current branch is `main`
+- local `main` matches `origin/main`
+- version read from `pyproject.toml`
+- tag does not already exist (local/remote)
+- `python3 -m pip install -e .` and `pytest -q`
+- procurement pack generation (`./bin/mk-procurement-pack`)
+- annotated tag creation and push
+- GitHub Release creation with assets:
+  - `report/procurement_pack/procurement_pack.tar.gz`
+  - `report/procurement_pack/checksums.sha256`
 
-## 6) Post-publish smoke
+## Do not commit generated outputs
 
-Run both smoke paths (fresh environments), then tag.
-
-### mk-install path
-```bash
-rm -rf /tmp/mk-install-smoke-home
-HOME=/tmp/mk-install-smoke-home bash ./bin/mk-install
-/tmp/mk-install-smoke-home/.modekeeper/venv/bin/python -c 'import importlib.metadata as m; print(m.version(\"modekeeper\"))'
-```
-
-### pip path
-```bash
-rm -rf /tmp/mk-pip-smoke-venv
-python -m venv /tmp/mk-pip-smoke-venv
-PIP_DISABLE_PIP_VERSION_CHECK=1 /tmp/mk-pip-smoke-venv/bin/pip install -U --no-cache-dir --index-url https://pypi.org/simple modekeeper
-/tmp/mk-pip-smoke-venv/bin/python -c 'import importlib.metadata as m; print(m.version(\"modekeeper\"))'
-```
-
-## 7) Tag and release
-
-Only after smoke success:
-```bash
-git tag -a vX.Y.Z -m "release vX.Y.Z"
-git push origin vX.Y.Z
-```
-
-Then create GitHub release notes referencing changelog section.
-
-## Do not commit
-- `report/**`
-- `dist/**`
-- `build/**`
-- `*.egg-info/**`
-- local secrets (e.g. `secrets/**`, local license/key material)
-- temporary local env artifacts (`.venv/**`, `.pytest_cache/**`)
-
-## Final release checklist
-- version aligned in `pyproject.toml` and `src/modekeeper/__init__.py`
-- changelog updated
-- tests pass
-- wheel-only publish done via `bin/mk-release-stub`
-- smoke checks passed
-- tag created after smoke
+Do not commit release artifacts under `report/**`.
+Release assets are attached to the GitHub Release instead.

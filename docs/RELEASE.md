@@ -2,30 +2,37 @@
 
 Distribution boundary policy for the public showroom snapshot is documented in `docs/DISTRIBUTION_POLICY.md`.
 
-Public PyPI releases for `modekeeper` use:
+## Canonical release command
+
+Run from repo root on `main`:
 
 ```bash
-bin/mk-release-stub
+./scripts/release_public.sh
 ```
+
+The script validates branch/repo state, runs install + tests, generates the procurement pack, creates/pushes the release tag, and creates the GitHub Release with procurement assets.
 
 ## Public release rules
 
-1. Wheel-only uploads.
-2. No manual wildcard uploads.
-3. CI must run checks only.
-4. Run install smoke checks before tagging.
+1. Version bump and changelog are prepared in a PR first.
+2. Merge to `main` before release.
+3. Run only `./scripts/release_public.sh` for public release.
+4. Do not commit `report/**`; publish procurement artifacts as GitHub Release assets.
 
-## Smoke checks
+## Version checks
+
+Read version directly from source:
 
 ```bash
-rm -rf /tmp/mk-install-smoke-home
-HOME=/tmp/mk-install-smoke-home bash ./bin/mk-install
-/tmp/mk-install-smoke-home/.modekeeper/venv/bin/python -c 'import importlib.metadata as m; print(m.version(\"modekeeper\"))'
+python3 - <<'PY'
+import tomllib
+from pathlib import Path
+print(tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"])
+PY
 ```
 
+Installed-package check (when installed):
+
 ```bash
-rm -rf /tmp/mk-pip-smoke-venv
-python -m venv /tmp/mk-pip-smoke-venv
-/tmp/mk-pip-smoke-venv/bin/pip install -U --no-cache-dir --index-url https://pypi.org/simple modekeeper
-/tmp/mk-pip-smoke-venv/bin/python -c 'import importlib.metadata as m; print(m.version(\"modekeeper\"))'
+python3 -c 'import importlib.metadata as m; print(m.version("modekeeper"))'
 ```
