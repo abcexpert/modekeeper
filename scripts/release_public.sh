@@ -117,6 +117,7 @@ RELEASE_NOTES="Public showroom release ${TAG}"
 PACK_DIR="report/procurement_pack"
 PACK_TARBALL="${PACK_DIR}/procurement_pack.tar.gz"
 PACK_CHECKSUMS="${PACK_DIR}/checksums.sha256"
+MK_PACK_DEMO_KIND="${MK_PACK_DEMO_KIND:-1}"
 SMOKE_TESTS=(
   tests/test_cli_version.py
   tests/test_cli_doctor.py
@@ -230,7 +231,7 @@ esac
 
 
 echo "Building procurement pack..."
-./bin/mk-procurement-pack
+MK_PACK_DEMO_KIND="$MK_PACK_DEMO_KIND" ./bin/mk-procurement-pack
 
 if [[ ! -f "${PACK_TARBALL}" ]]; then
   echo "ERROR: expected release asset not found: ${PACK_TARBALL}" >&2

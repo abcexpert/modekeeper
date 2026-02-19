@@ -65,6 +65,8 @@ The script enforces:
 
 With `--dry-run`, the script stops after verifying procurement pack assets and prints `dry-run ok` with the computed tag and asset paths.
 
+Procurement pack generation in release mode defaults to `MK_PACK_DEMO_KIND=1`, which builds buyer-pack artifacts against a deterministic local kind cluster seeded from `examples/demo_k8s/`. This keeps shipped artifacts green by default. Set `MK_PACK_DEMO_KIND=0` to use your current kubeconfig instead. Buyers should run `./bin/mk-buyer-pack` on their own cluster to measure real blockers and ROI.
+
 ## Do not commit generated outputs
 
 Do not commit release artifacts under `report/**`.
