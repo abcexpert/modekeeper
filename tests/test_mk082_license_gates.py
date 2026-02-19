@@ -27,6 +27,13 @@ def _assert_pro_required(out_dir: Path, stderr: str) -> None:
     assert report.get("reason") == "pro_required"
 
 
+def _assert_kill_switch_blocked(out_dir: Path, stderr: str) -> None:
+    assert stderr.strip() == "ERROR: MODEKEEPER_KILL_SWITCH=1 blocks apply/mutate operations"
+    report = json.loads((out_dir / "k8s_apply_latest.json").read_text(encoding="utf-8"))
+    assert report.get("block_reason") == "kill_switch_active"
+    assert report.get("reason") == "kill_switch_active"
+
+
 def test_apply_gate_is_pro_required_without_pro_install(tmp_path: Path, mk_path: Path) -> None:
     plan = tmp_path / "plan.json"
     _write_plan(plan)
@@ -37,7 +44,7 @@ def test_apply_gate_is_pro_required_without_pro_install(tmp_path: Path, mk_path:
     _assert_pro_required(out_dir, cp.stderr)
 
 
-def test_apply_gate_is_pro_required_even_with_license_and_override(tmp_path: Path, mk_path: Path) -> None:
+def test_apply_gate_kill_switch_has_absolute_precedence(tmp_path: Path, mk_path: Path) -> None:
     plan = tmp_path / "plan.json"
     _write_plan(plan)
     out_dir = tmp_path / "out"
@@ -53,4 +60,4 @@ def test_apply_gate_is_pro_required_even_with_license_and_override(tmp_path: Pat
         },
     )
     assert cp.returncode == 2
-    _assert_pro_required(out_dir, cp.stderr)
+    _assert_kill_switch_blocked(out_dir, cp.stderr)

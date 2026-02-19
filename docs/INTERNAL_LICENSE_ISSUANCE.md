@@ -63,6 +63,11 @@ Customer verifies with zero env and no `--license`:
 mk license verify --out ./report/_license_verify
 ```
 
+Verifier artifact (`license_verify_latest.json`) includes:
+- `license_ok`, `kid`, `issuer`, `expiry`, `entitlements`
+- `reason_code` (stable outcome code)
+- `failure_code`, `failure_detail` (when blocked; safe reason-coded values only)
+
 ## 4) Rotate `kid`
 
 Rotation flow:
@@ -76,3 +81,7 @@ Verifier semantics stay unchanged:
 - If `kid` exists in license, verifier uses only that key.
 - Unknown `kid` is `license_invalid`.
 - If no `kid` is present, verifier may fall back to allowlist scan.
+
+## 5) Optional trust chain mode status
+
+Trust chain mode (`root -> issuer keyset signature -> license`) is deferred. Current production flow is allowlist-by-`kid` only.

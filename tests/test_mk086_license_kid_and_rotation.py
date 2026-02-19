@@ -43,6 +43,7 @@ def test_license_verify_ok_with_known_kid(tmp_path: Path, monkeypatch) -> None:
     report = verify_license(license_path, now_ts=1700000100)
     assert report["license_ok"] is True
     assert report["reason"] == "ok"
+    assert report["kid"] == "mk-dev-2026-01"
 
 
 def test_license_verify_blocked_with_unknown_kid(tmp_path: Path, monkeypatch) -> None:
@@ -66,6 +67,8 @@ def test_license_verify_blocked_with_unknown_kid(tmp_path: Path, monkeypatch) ->
     report = verify_license(license_path, now_ts=1700000100)
     assert report["license_ok"] is False
     assert report["reason"] == "license_invalid"
+    assert report["failure_code"] == "license_unknown_kid"
+    assert report["kid"] == "mk-dev-unknown"
 
 
 def test_license_verify_rotation_uses_kid_selected_key(tmp_path: Path, monkeypatch) -> None:
@@ -90,6 +93,7 @@ def test_license_verify_rotation_uses_kid_selected_key(tmp_path: Path, monkeypat
     assert report["license_ok"] is True
     assert report["reason"] == "ok"
     assert report["entitlements_summary"] == ["apply", "observe"]
+    assert report["kid"] == "mk-dev-2026-02"
 
 
 def test_license_verify_rotation_without_kid_falls_back_to_allowlist(tmp_path: Path, monkeypatch) -> None:
@@ -113,3 +117,4 @@ def test_license_verify_rotation_without_kid_falls_back_to_allowlist(tmp_path: P
     assert report["license_ok"] is True
     assert report["reason"] == "ok"
     assert report["entitlements_summary"] == ["apply", "observe"]
+    assert report["kid"] is None

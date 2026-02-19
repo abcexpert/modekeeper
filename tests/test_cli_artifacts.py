@@ -48,13 +48,13 @@ def test_closed_loop_report_artifacts_apply_paths_are_pro_gated(tmp_path: Path, 
         env=env,
     )
     assert cp.returncode == 2
-    assert cp.stderr.strip() == "PRO REQUIRED: closed-loop --apply"
+    assert cp.stderr.strip() == "ERROR: MODEKEEPER_KILL_SWITCH=1 blocks apply/mutate operations"
 
     latest = json.loads((out_dir / "closed_loop_latest.json").read_text(encoding="utf-8"))
     assert latest.get("apply_requested") is True
-    assert latest.get("apply_blocked_reason") == "pro_required"
+    assert latest.get("apply_blocked_reason") == "kill_switch_active"
     apply_latest = json.loads((out_dir / "k8s_apply_latest.json").read_text(encoding="utf-8"))
-    assert apply_latest.get("block_reason") == "pro_required"
+    assert apply_latest.get("block_reason") == "kill_switch_active"
 
     if kubectl_log.exists():
         assert "--patch" not in kubectl_log.read_text(encoding="utf-8")
