@@ -287,6 +287,9 @@ def _env_truthy(name: str) -> bool:
 
 _KILL_SWITCH_ERROR_LINE = "ERROR: MODEKEEPER_KILL_SWITCH=1 blocks apply/mutate operations"
 _VERIFY_GATE_ERROR_LINE = "ERROR: verify_ok=true is required for apply/mutate operations"
+_KILL_SWITCH_BLOCK_REASON = "kill_switch_active"
+_KILL_SWITCH_ENV_SIGNAL = "env:MODEKEEPER_KILL_SWITCH"
+_KILL_SWITCH_UNRELIABLE_SIGNAL = "kill_switch_unreliable"
 _LICENSE_ENV_VAR = "MODEKEEPER_LICENSE_PATH"
 _LICENSE_CWD_FILENAME = "modekeeper.license.json"
 _MODEKEEPER_HOME_CONFIG_DIR = Path(".config") / "modekeeper"
@@ -301,6 +304,7 @@ _APPLY_BLOCK_ERROR_LINES = {
     "license_invalid": "ERROR: apply blocked: license_invalid",
     "verify_failed": _VERIFY_GATE_ERROR_LINE,
     "verify_missing": _VERIFY_GATE_ERROR_LINE,
+    _KILL_SWITCH_BLOCK_REASON: _KILL_SWITCH_ERROR_LINE,
 }
 _PRO_REQUIRED_REASON = "pro_required"
 
@@ -317,6 +321,29 @@ def _emit_apply_block_error(reason: str | None) -> None:
 
 def _is_verify_gate_reason(reason: str | None) -> bool:
     return str(reason or "") in {"verify_failed", "verify_missing"}
+
+
+def _evaluate_kill_switch_signal() -> dict[str, object]:
+    """Fail-closed kill-switch evaluation shared by all apply entrypoints."""
+    try:
+        raw = os.environ.get("MODEKEEPER_KILL_SWITCH")
+    except Exception:
+        return {
+            "active": True,
+            "signal": _KILL_SWITCH_UNRELIABLE_SIGNAL,
+            "reliable": False,
+        }
+    if raw is None:
+        return {
+            "active": False,
+            "signal": None,
+            "reliable": True,
+        }
+    return {
+        "active": True,
+        "signal": _KILL_SWITCH_ENV_SIGNAL,
+        "reliable": True,
+    }
 
 
 def _require_pro(feature: str) -> int:
@@ -1257,6 +1284,7 @@ def _write_closed_loop_summary(
         f"apply_requested: {apply_requested}",
         f"dry_run: {report.get('dry_run')}",
         f"kill_switch_active: {report.get('kill_switch_active')}",
+        f"kill_switch_signal: {report.get('kill_switch_signal')}",
         f"paid_enabled: {report.get('paid_enabled')}",
         f"verify_ok: {report.get('verify_ok')}",
         f"apply_decision_summary: {report.get('apply_decision_summary')}",
@@ -1361,6 +1389,8 @@ def _write_pro_required_k8s_apply_artifacts(
     *,
     out_dir: Path,
     plan_path: Path,
+    block_reason: str = _PRO_REQUIRED_REASON,
+    block_details: dict | None = None,
 ) -> Path:
     explain = ExplainLog(out_dir / "explain.jsonl")
     explain.emit(
@@ -1368,7 +1398,10 @@ def _write_pro_required_k8s_apply_artifacts(
         {"plan": str(plan_path), "out": str(out_dir), "force": False},
     )
     normalized_plan, namespace, deployment = _read_k8s_plan_best_effort(plan_path)
-    explain.emit("k8s_apply_blocked", {"reason": _PRO_REQUIRED_REASON, "details": {"feature": "k8s apply"}})
+    details = {"feature": "k8s apply"}
+    if isinstance(block_details, dict):
+        details.update(block_details)
+    explain.emit("k8s_apply_blocked", {"reason": block_reason, "details": details})
 
     started_at = _utc_now()
     finished_at = _utc_now()
@@ -1381,8 +1414,8 @@ def _write_pro_required_k8s_apply_artifacts(
         "objects": _k8s_objects_from_plan(normalized_plan),
         "paid_enabled": False,
         "would_apply": False,
-        "block_reason": _PRO_REQUIRED_REASON,
-        "reason": _PRO_REQUIRED_REASON,
+        "block_reason": block_reason,
+        "reason": block_reason,
         "ok": False,
         "items": [
             {
@@ -1392,6 +1425,11 @@ def _write_pro_required_k8s_apply_artifacts(
             for item in normalized_plan
         ],
     }
+    if isinstance(block_details, dict):
+        if "kill_switch_active" in block_details:
+            report_base["kill_switch_active"] = bool(block_details.get("kill_switch_active"))
+        if "kill_switch_signal" in block_details:
+            report_base["kill_switch_signal"] = block_details.get("kill_switch_signal")
     report = _build_report(
         report_base,
         started_at=started_at,
@@ -1411,7 +1449,13 @@ def _write_pro_required_k8s_apply_artifacts(
     return report_path
 
 
-def _run_closed_loop_pro_required(args: argparse.Namespace) -> int:
+def _run_closed_loop_pro_required(
+    args: argparse.Namespace,
+    *,
+    block_reason: str = _PRO_REQUIRED_REASON,
+    kill_switch_active: bool = False,
+    kill_switch_signal: str | None = None,
+) -> int:
     observe_duration_ms = _parse_duration_ms(args.observe_duration)
     out_dir = Path(args.out)
     report, _ = _run_closed_loop_once(
@@ -1444,7 +1488,7 @@ def _run_closed_loop_pro_required(args: argparse.Namespace) -> int:
             "action": action,
             "applied": False,
             "blocked": True,
-            "reason": _PRO_REQUIRED_REASON,
+            "reason": block_reason,
             "dry_run": True,
         }
         for action in proposed
@@ -1453,24 +1497,65 @@ def _run_closed_loop_pro_required(args: argparse.Namespace) -> int:
     k8s_apply_report_path = _write_pro_required_k8s_apply_artifacts(
         out_dir=out_dir,
         plan_path=Path(str(report.get("k8s_plan_path") or out_dir / "k8s_plan.json")),
+        block_reason=block_reason,
+        block_details={
+            "kill_switch_active": bool(kill_switch_active),
+            "kill_switch_signal": kill_switch_signal,
+        },
     )
     report["apply_requested"] = True
     report["dry_run"] = False
     report["apply_attempted"] = False
     report["apply_ok"] = None
     report["k8s_apply_rc"] = 2
-    report["apply_blocked_reason"] = _PRO_REQUIRED_REASON
-    report["apply_decision_summary"] = f"apply blocked: {_PRO_REQUIRED_REASON}"
+    report["kill_switch_active"] = bool(kill_switch_active)
+    report["kill_switch_signal"] = kill_switch_signal
+    report["apply_blocked_reason"] = block_reason
+    report["apply_decision_summary"] = f"apply blocked: {block_reason}"
     report["results"] = results
-    report["blocked_reasons"] = {_PRO_REQUIRED_REASON: len(results)} if results else {}
+    report["blocked_reasons"] = {block_reason: len(results)} if results else {}
     report["applied_reasons"] = {}
     report["k8s_apply_report_path"] = str(k8s_apply_report_path)
+    trace_path = out_dir / "decision_trace_latest.jsonl"
+    if trace_path.exists():
+        try:
+            trace_lines = [line for line in trace_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            if trace_lines:
+                last_event = json.loads(trace_lines[-1])
+                if isinstance(last_event, dict):
+                    results_payload = last_event.get("results")
+                    if not isinstance(results_payload, dict):
+                        results_payload = {}
+                    results_payload.update(
+                        {
+                            "apply_requested": True,
+                            "dry_run": False,
+                            "apply_attempted": False,
+                            "apply_ok": None,
+                            "blocked_reason": block_reason,
+                            "apply_blocked_reason": block_reason,
+                            "kill_switch_active": bool(kill_switch_active),
+                            "kill_switch_signal": kill_switch_signal,
+                        }
+                    )
+                    last_event["results"] = results_payload
+                    trace_lines[-1] = json.dumps(
+                        last_event,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        ensure_ascii=False,
+                    )
+                    trace_path.write_text("\n".join(trace_lines) + "\n", encoding="utf-8")
+        except Exception:
+            pass
     explain = ExplainLog(out_dir / "explain.jsonl")
     explain.emit(
         "closed_loop_apply_blocked",
         {
-            "reason": _PRO_REQUIRED_REASON,
+            "reason": block_reason,
             "feature": "closed-loop --apply",
+            "kill_switch_active": bool(kill_switch_active),
+            "kill_switch_signal": kill_switch_signal,
         },
     )
     explain.emit(
@@ -1481,7 +1566,10 @@ def _run_closed_loop_pro_required(args: argparse.Namespace) -> int:
             "apply_attempted": False,
             "apply_ok": None,
             "verify_ok": None,
-            "blocked_reason": _PRO_REQUIRED_REASON,
+            "blocked_reason": block_reason,
+            "apply_blocked_reason": block_reason,
+            "kill_switch_active": bool(kill_switch_active),
+            "kill_switch_signal": kill_switch_signal,
             "k8s_verify_report_path": report.get("k8s_verify_report_path"),
             "k8s_apply_report_path": str(k8s_apply_report_path),
             "k8s_apply_rc": 2,
@@ -1494,10 +1582,19 @@ def _run_closed_loop_pro_required(args: argparse.Namespace) -> int:
         prefix="closed_loop",
         latest_name="closed_loop_latest.json",
     )
+    if block_reason == _KILL_SWITCH_BLOCK_REASON:
+        _emit_kill_switch_error()
+        return 2
     return _require_pro("closed-loop --apply")
 
 
-def _write_watch_pro_required_artifacts(base_out_dir: Path, interval_s: int | float, max_iterations: int | None) -> None:
+def _write_watch_pro_required_artifacts(
+    base_out_dir: Path,
+    interval_s: int | float,
+    max_iterations: int | None,
+    *,
+    block_reason: str = _PRO_REQUIRED_REASON,
+) -> None:
     started_at = _utc_now()
     report = _build_watch_report(
         base_out_dir=base_out_dir,
@@ -1521,7 +1618,7 @@ def _write_watch_pro_required_artifacts(base_out_dir: Path, interval_s: int | fl
         observe_record_raw_path=None,
         observe_record_raw_lines_total=None,
     )
-    report["apply_blocked_reason"] = _PRO_REQUIRED_REASON
+    report["apply_blocked_reason"] = block_reason
     _write_watch_latest(base_out_dir, report)
     _write_watch_summary(base_out_dir, report)
 
@@ -2934,7 +3031,11 @@ def _run_closed_loop_once(
     apply_attempted = False
     apply_blocked_reason: str | None = None
 
-    kill_switch_active = _env_truthy("MODEKEEPER_KILL_SWITCH")
+    kill_switch_eval = _evaluate_kill_switch_signal()
+    kill_switch_active = bool(kill_switch_eval.get("active"))
+    kill_switch_signal = (
+        str(kill_switch_eval.get("signal")) if kill_switch_eval.get("signal") else None
+    )
     license_gate: dict[str, object] | None = None
     paid_enabled = False
 
@@ -2967,7 +3068,7 @@ def _run_closed_loop_once(
         )
         paid_enabled = bool(license_gate.get("internal_override") or license_gate.get("license_ok"))
         if kill_switch_active:
-            apply_blocked_reason = "kill_switch"
+            apply_blocked_reason = _KILL_SWITCH_BLOCK_REASON
         else:
             apply_blocked_reason = (
                 str(license_gate.get("block_reason")) if license_gate.get("block_reason") else None
@@ -2986,6 +3087,7 @@ def _run_closed_loop_once(
                     "license_expires_at": license_gate.get("expires_at"),
                     "entitlements_summary": license_gate.get("entitlements_summary"),
                     "internal_override": license_gate.get("internal_override"),
+                    "kill_switch_signal": kill_switch_signal,
                 },
             )
             # Emit canonical k8s apply artifacts even for gated/blocked apply.
@@ -3028,6 +3130,7 @@ def _run_closed_loop_once(
                             "license_expires_at": license_gate.get("expires_at"),
                             "entitlements_summary": license_gate.get("entitlements_summary"),
                             "internal_override": license_gate.get("internal_override"),
+                            "kill_switch_signal": kill_switch_signal,
                         },
                     )
                 else:
@@ -3047,6 +3150,9 @@ def _run_closed_loop_once(
             "apply_ok": apply_ok,
             "verify_ok": verify_ok,
             "blocked_reason": apply_blocked_reason,
+            "apply_blocked_reason": apply_blocked_reason,
+            "kill_switch_active": kill_switch_active,
+            "kill_switch_signal": kill_switch_signal,
             "k8s_verify_report_path": str(verify_report_path) if verify_report_path else None,
             "k8s_apply_report_path": str(apply_report_path) if apply_report_path else None,
             "k8s_apply_rc": k8s_apply_rc,
@@ -3181,6 +3287,8 @@ def _run_closed_loop_once(
             "apply_ok": apply_ok,
             "verify_ok": verify_ok,
             "blocked_reason": apply_blocked_reason,
+            "kill_switch_active": kill_switch_active,
+            "kill_switch_signal": kill_switch_signal,
             "blocked_reasons": blocked_reasons,
         },
     }
@@ -3212,6 +3320,7 @@ def _run_closed_loop_once(
         "apply_ok": apply_ok,
         "decision_summary": decision_summary,
         "kill_switch_active": kill_switch_active,
+        "kill_switch_signal": kill_switch_signal,
         "paid_enabled": paid_enabled,
         "license_path": (license_gate or {}).get("license_path"),
         "license_ok": (license_gate or {}).get("license_ok"),
@@ -3272,6 +3381,16 @@ def _run_closed_loop_once(
 
 def cmd_closed_loop(args: argparse.Namespace) -> int:
     if bool(args.apply):
+        kill_switch = _evaluate_kill_switch_signal()
+        if bool(kill_switch.get("active")):
+            return _run_closed_loop_pro_required(
+                args,
+                block_reason=_KILL_SWITCH_BLOCK_REASON,
+                kill_switch_active=True,
+                kill_switch_signal=(
+                    str(kill_switch.get("signal")) if kill_switch.get("signal") else None
+                ),
+            )
         pro_cli_ext = _load_pro_cli_ext()
         if pro_cli_ext is not None and hasattr(pro_cli_ext, "cmd_closed_loop_apply"):
             return int(pro_cli_ext.cmd_closed_loop_apply(args))
@@ -3620,6 +3739,19 @@ def _cmd_closed_loop_watch_legacy(args: argparse.Namespace) -> int:
 
 def cmd_closed_loop_watch(args: argparse.Namespace) -> int:
     if bool(args.apply):
+        kill_switch = _evaluate_kill_switch_signal()
+        if bool(kill_switch.get("active")):
+            base_out_dir = _ensure_out_dir(args.out)
+            interval_ms = int(args.interval)
+            interval_s = _duration_ms_to_seconds(interval_ms)
+            _write_watch_pro_required_artifacts(
+                base_out_dir,
+                interval_s,
+                args.max_iterations,
+                block_reason=_KILL_SWITCH_BLOCK_REASON,
+            )
+            _emit_kill_switch_error()
+            return 2
         pro_cli_ext = _load_pro_cli_ext()
         if pro_cli_ext is not None and hasattr(pro_cli_ext, "cmd_closed_loop_watch_apply"):
             return int(pro_cli_ext.cmd_closed_loop_watch_apply(args))
@@ -4678,6 +4810,9 @@ def cmd_license_verify(args: argparse.Namespace) -> int:
     verify = verify_license(
         license_path,
         kubectl=os.environ.get("KUBECTL", args.kubectl),
+        trust_chain=bool(args.trust_chain),
+        issuer_keyset_path=Path(args.issuer_keyset) if args.issuer_keyset else None,
+        public_keys_path=Path(args.root_public_keys) if args.root_public_keys else None,
     )
     latest_path = out_dir / "license_verify_latest.json"
     latest_path.write_text(
@@ -4807,6 +4942,29 @@ def _run_k8s_apply(
 
 
 def cmd_k8s_apply(args: argparse.Namespace) -> int:
+    kill_switch = _evaluate_kill_switch_signal()
+    if bool(kill_switch.get("active")):
+        out_dir = _ensure_out_dir(args.out)
+        _write_pro_required_k8s_apply_artifacts(
+            out_dir=out_dir,
+            plan_path=Path(args.plan),
+            block_reason=_KILL_SWITCH_BLOCK_REASON,
+            block_details={
+                "kill_switch_active": True,
+                "kill_switch_signal": (
+                    str(kill_switch.get("signal")) if kill_switch.get("signal") else None
+                ),
+            },
+        )
+        _emit_policy_bundle_latest(
+            out_dir,
+            policy_id="external_plan",
+            policy_version="v1",
+            policy_params={},
+        )
+        _emit_kill_switch_error()
+        return 2
+
     pro_cli_ext = _load_pro_cli_ext()
     if pro_cli_ext is not None and hasattr(pro_cli_ext, "cmd_k8s_apply"):
         return int(pro_cli_ext.cmd_k8s_apply(args))
@@ -5343,6 +5501,28 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Path to license JSON (default: MODEKEEPER_LICENSE_PATH, "
             "else ${HOME}/.config/modekeeper/license.json)"
+        ),
+    )
+    license_verify.add_argument(
+        "--trust-chain",
+        action="store_true",
+        help=(
+            "Enable trust-chain verification: root public key allowlist verifies "
+            "issuer keyset signature, then issuer keys verify license"
+        ),
+    )
+    license_verify.add_argument(
+        "--issuer-keyset",
+        help=(
+            "Path to issuer keyset JSON (required with --trust-chain). "
+            "Expected schema: issuer_keyset.v1"
+        ),
+    )
+    license_verify.add_argument(
+        "--root-public-keys",
+        help=(
+            "Path to root public key allowlist JSON map {kid->pubkey_b64_raw32}. "
+            "Without --trust-chain this path acts as a direct keyring override."
         ),
     )
     license_verify.add_argument("--out", default="report/_license_verify", help="Output directory")

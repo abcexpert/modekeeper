@@ -63,6 +63,11 @@ Customer verifies with zero env and no `--license`:
 mk license verify --out ./report/_license_verify
 ```
 
+Verifier artifact (`license_verify_latest.json`) includes:
+- `license_ok`, `kid`, `issuer`, `expiry`, `entitlements`
+- `reason_code` (stable outcome code)
+- `failure_code`, `failure_detail` (when blocked; safe reason-coded values only)
+
 ## 4) Rotate `kid`
 
 Rotation flow:
@@ -76,3 +81,24 @@ Verifier semantics stay unchanged:
 - If `kid` exists in license, verifier uses only that key.
 - Unknown `kid` is `license_invalid`.
 - If no `kid` is present, verifier may fall back to allowlist scan.
+
+## 5) Optional trust chain mode
+
+Trust chain mode is available for explicit verify runs:
+
+```bash
+mk license verify \
+  --trust-chain \
+  --issuer-keyset ./dist/issuer_keyset.json \
+  --root-public-keys ./dist/root_public_keys.json \
+  --license ./dist/customer_inc.license.json \
+  --out ./report/_license_verify
+```
+
+`issuer_keyset.json` contract:
+- `schema_version: issuer_keyset.v1`
+- `root_kid`: key id from root allowlist
+- `keys`: JSON map `{kid -> pubkey_b64_raw32}` for issuer keys
+- `signature`: Ed25519 signature by selected root key over canonical JSON (`sort_keys=True`, `separators=(',',':')`) of keyset object without `signature`.
+
+Default production flow remains allowlist-by-`kid` when trust-chain mode is not enabled.

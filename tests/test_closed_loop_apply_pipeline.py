@@ -57,7 +57,6 @@ def test_closed_loop_apply_requires_pro_and_writes_reason_artifacts(tmp_path: Pa
 
     env = {
         **os.environ,
-        "MODEKEEPER_KILL_SWITCH": "0",
         "MODEKEEPER_PAID": "1",
         "MODEKEEPER_INTERNAL_OVERRIDE": "1",
         "KUBECTL": str(kubectl),

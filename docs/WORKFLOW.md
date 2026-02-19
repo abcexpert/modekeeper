@@ -70,7 +70,7 @@ Artifacts in `report/_watch`:
 
 ## Paid (recommended, one-shot closed-loop apply)
 `mk closed-loop run --apply` выполняет verify + apply в одном шаге, но строго gated:
-- `MODEKEEPER_KILL_SWITCH=1` → apply блокируется.
+- Если задан `MODEKEEPER_KILL_SWITCH` (любое значение) → apply блокируется (fail-closed).
 - Kill-switch имеет максимальный приоритет: `MODEKEEPER_INTERNAL_OVERRIDE=1` и валидная лицензия не обходят блокировку.
 - При `MODEKEEPER_KILL_SWITCH=1` CLI apply-entrypoints (`mk closed-loop run --apply`, `mk closed-loop watch --apply`, `mk k8s apply`) завершаются с `exit code 2` и однострочной ошибкой: `ERROR: MODEKEEPER_KILL_SWITCH=1 blocks apply/mutate operations`.
 - Лицензия ищется в детерминированном порядке:
@@ -87,12 +87,14 @@ Artifacts in `report/_watch`:
 - `apply_attempted` (bool)
 - `apply_ok` (bool, when attempted)
 - `apply_blocked_reason` (string|null)
+- `kill_switch_active` (bool)
+- `kill_switch_signal` (safe string|null)
 - `k8s_verify_report_path` (string path)
 - `k8s_apply_report_path` (string path|null)
 - `results` length equals `proposed` length even when blocked
 - `apply_decision_summary` (optional/legacy)
 
-Для демо безопасный дефолт: `MODEKEEPER_KILL_SWITCH=1` (apply блокируется). Для реального apply отключите kill switch: `MODEKEEPER_KILL_SWITCH=0` (или unset).
+Для демо безопасный дефолт: `MODEKEEPER_KILL_SWITCH=1` (apply блокируется). Для реального apply переменная kill-switch должна быть unset.
 
 ### Canonical paid e2e (kind)
 
@@ -156,7 +158,7 @@ Demonstrates deterministic blocked apply cases:
 - A) missing license path -> `license_invalid`
 - B) unknown `kid` in keyring -> `license_invalid`
 - C) failing verify artifact (`verify_ok=false`) -> `verify_failed` (apply blocked by core `mk k8s apply` gate)
-- D) `MODEKEEPER_KILL_SWITCH=1` -> `kill_switch` (`rc=2` + fixed error line)
+- D) `MODEKEEPER_KILL_SWITCH=1` -> `kill_switch_active` (`rc=2` + fixed error line)
 
 Artifacts are saved under `report/_demo_safety_gates` (or `--out DIR`), one subdirectory per case.
 
@@ -179,6 +181,21 @@ MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH=./license_dev_public_keys.json MODEKEEPER_LI
   - `kid` задан: берётся только ключ этого `kid`; неизвестный `kid` => `license_invalid`.
   - `kid` не задан: fallback, verify может перебрать все allowlisted ключи; если ни один не подошёл => `license_invalid`.
 - Ротация: добавить новый `{kid -> pubkey}` в keyring, выпускать новые лицензии с новым `kid`, старые лицензии продолжают работать, пока их `kid` остаётся в allowlist.
+
+`mk license verify` artifact now includes: `license_ok`, `kid`, `issuer`, `expiry`, `entitlements`, `reason_code`, `failure_code`, `failure_detail`.
+
+### Optional trust chain mode
+- Trust chain mode (`root -> issuer signed keyset -> license`) is optional and explicit:
+  - `mk license verify --trust-chain --issuer-keyset ./issuer_keyset.json --root-public-keys ./root_public_keys.json --license ./license.json --out ./report/_license_verify`
+- Signature contract for issuer keyset:
+  - schema: `issuer_keyset.v1`
+  - fields: `root_kid`, `keys` (`{kid -> pubkey_b64_raw32}`), `signature`
+  - signature input: canonical JSON (`sort_keys=True`, `separators=(',',':')`) of keyset object without `signature`.
+- Verify semantics in trust-chain mode:
+  - unknown `root_kid` => `license_invalid`
+  - bad keyset signature => `license_invalid`
+  - unknown license `kid` in issuer keyset => `license_invalid`
+- Default path remains backward-compatible allowlist-by-`kid` when `--trust-chain` is not set.
 
 ### Canonical kind/e2e scripts
 ```

@@ -56,9 +56,12 @@
 - `apply_attempted` (bool)
 - `apply_ok` (bool, when attempted)
 - `apply_blocked_reason` (string|null)
+- `kill_switch_active` (bool)
+- `kill_switch_signal` (safe string|null)
 - `k8s_verify_report_path` (string path)
 - `k8s_apply_report_path` (string path|null)
 - invariant: `len(results) == len(proposed)` even when apply is blocked
+- canonical kill-switch block reason: `kill_switch_active`
 
 ## schema_version / duration_s differences
 
