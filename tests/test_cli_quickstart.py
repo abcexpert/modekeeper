@@ -34,7 +34,20 @@ def test_cli_quickstart_file_source(tmp_path: Path, mk_path: Path) -> None:
     assert plan_report.get("k8s_plan_path")
 
     assert (out_dir / "verify" / "k8s_verify_latest.json").exists()
+    assert (out_dir / "preflight" / "preflight_latest.json").exists()
+    assert (out_dir / "preflight" / "summary.md").exists()
+    assert (out_dir / "eval" / "eval_latest.json").exists()
+    assert (out_dir / "eval" / "summary.md").exists()
+    assert (out_dir / "watch" / "watch_latest.json").exists()
+    assert (out_dir / "watch" / "summary.md").exists()
+    assert (out_dir / "roi" / "roi_latest.json").exists()
+    assert (out_dir / "roi" / "summary.md").exists()
 
     export_dir = out_dir / "export"
     assert (export_dir / "bundle_manifest.json").exists()
     assert (export_dir / "bundle.tar.gz").exists()
+    bundle_summary = (export_dir / "bundle_summary.md").read_text(encoding="utf-8")
+    assert "missing_preflight_latest.json" not in bundle_summary
+    assert "missing_eval_latest.json" not in bundle_summary
+    assert "missing_roi_latest.json" not in bundle_summary
+    assert "missing_watch_latest.json" not in bundle_summary
