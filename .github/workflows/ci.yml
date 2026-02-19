@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Public boundary guard
         run: |
@@ -30,6 +32,58 @@ jobs:
         run: |
           set -Eeuo pipefail
           python -m pip install -U pip build twine pytest
+
+      - name: Classify changed paths
+        id: classify
+        run: |
+          set -Eeuo pipefail
+
+          head_sha="${GITHUB_SHA}"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+
+          if [[ -z "${base_sha}" ]] || [[ "${base_sha}" =~ ^0+$ ]]; then
+            if git rev-parse --verify --quiet HEAD^ >/dev/null; then
+              base_sha="$(git rev-parse HEAD^)"
+            else
+              base_sha="${head_sha}"
+            fi
+          fi
+
+          echo "Base SHA: ${base_sha}"
+          echo "Head SHA: ${head_sha}"
+
+          mapfile -t changed_paths < <(git diff --name-only "${base_sha}" "${head_sha}" || true)
+          if [[ "${#changed_paths[@]}" -eq 0 ]]; then
+            suite="docs-only"
+          else
+            suite="docs-only"
+            for p in "${changed_paths[@]}"; do
+              case "${p}" in
+                docs/**)
+                  ;;
+                bin/**|scripts/**)
+                  if [[ "${suite}" == "docs-only" ]]; then
+                    suite="scripts-only"
+                  fi
+                  ;;
+                src/**|tests/**|pyproject.toml|.github/workflows/**)
+                  suite="code"
+                  break
+                  ;;
+                *)
+                  suite="code"
+                  break
+                  ;;
+              esac
+            done
+          fi
+
+          echo "Detected suite: ${suite}"
+          echo "suite=${suite}" >> "${GITHUB_OUTPUT}"
 
       - name: Build wheel
         run: |
@@ -96,7 +150,24 @@ jobs:
           print("Wheel audit passed.")
           PY
 
-      - name: Run version test
+      - name: Run docs-only fast check
+        if: steps.classify.outputs.suite == 'docs-only'
         run: |
           set -Eeuo pipefail
           pytest -q tests/test_cli_version.py
+
+      - name: Run scripts-only smoke tests
+        if: steps.classify.outputs.suite == 'scripts-only'
+        run: |
+          set -Eeuo pipefail
+          pytest -q \
+            tests/test_cli_version.py \
+            tests/test_cli_doctor.py \
+            tests/test_cli_quickstart.py \
+            tests/test_mk097_export_bundle.py
+
+      - name: Run full test suite
+        if: steps.classify.outputs.suite == 'code'
+        run: |
+          set -Eeuo pipefail
+          pytest -q

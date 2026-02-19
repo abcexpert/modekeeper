@@ -48,7 +48,15 @@ The script enforces:
 - local `main` matches `origin/main`
 - version read from `pyproject.toml`
 - tag does not already exist (local/remote)
-- `python3 -m pip install -e .` and `pytest -q`
+- `python3 -m pip install -e .` and path-based test selection against latest `v*` tag
+  - docs-only changes (`docs/**`): skip pytest
+  - scripts-only changes (`bin/**`, `scripts/**`): run smoke set
+    - `tests/test_cli_version.py`
+    - `tests/test_cli_doctor.py`
+    - `tests/test_cli_quickstart.py`
+    - `tests/test_mk097_export_bundle.py`
+  - code changes (`src/**`, `tests/**`, `pyproject.toml`, `.github/workflows/**`, or any other path): run full `pytest -q`
+  - overrides: `MK_RELEASE_FULL=1` forces full pytest, `MK_RELEASE_SMOKE=1` forces smoke set
 - procurement pack generation (`./bin/mk-procurement-pack`)
 - annotated tag creation and push
 - GitHub Release creation with assets:

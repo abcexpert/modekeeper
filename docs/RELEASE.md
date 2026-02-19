@@ -11,6 +11,7 @@ Run from repo root on `main`:
 ```
 
 The script validates branch/repo state, runs install + tests, generates the procurement pack, creates/pushes the release tag, and creates the GitHub Release with procurement assets.
+Test scope is selected from changed paths versus latest `v*` tag (fallback `origin/main`): docs-only skips pytest, scripts-only (`bin/**`, `scripts/**`) runs smoke tests, and code/other paths run full `pytest -q`. Use `MK_RELEASE_FULL=1` to force full pytest or `MK_RELEASE_SMOKE=1` to force smoke tests.
 
 ## Public release rules
 

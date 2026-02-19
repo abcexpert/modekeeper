@@ -117,6 +117,12 @@ RELEASE_NOTES="Public showroom release ${TAG}"
 PACK_DIR="report/procurement_pack"
 PACK_TARBALL="${PACK_DIR}/procurement_pack.tar.gz"
 PACK_CHECKSUMS="${PACK_DIR}/checksums.sha256"
+SMOKE_TESTS=(
+  tests/test_cli_version.py
+  tests/test_cli_doctor.py
+  tests/test_cli_quickstart.py
+  tests/test_mk097_export_bundle.py
+)
 
 if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
   if [[ "$dry_run" -eq 1 ]]; then
@@ -139,12 +145,88 @@ fi
 echo "Installing package in editable mode..."
 python3 -m pip install -e .
 
-echo "Running tests..."
 if ! python3 -c "import pytest" >/dev/null 2>&1; then
   echo "Installing pytest..."
   python3 -m pip install -U pytest
 fi
-python3 -m pytest -q
+
+classify_release_suite() {
+  local base_ref=""
+  local latest_tag=""
+  local suite="docs-only"
+  local path=""
+
+  latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -n1 || true)"
+  if [[ -n "${latest_tag}" ]]; then
+    base_ref="${latest_tag}"
+  else
+    base_ref="origin/main"
+  fi
+
+  if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
+    echo "WARN: could not resolve base ref ${base_ref}; defaulting to full test suite" >&2
+    echo "code"
+    return 0
+  fi
+
+  echo "Test selection base ref: ${base_ref}" >&2
+
+  while IFS= read -r path; do
+    [[ -z "${path}" ]] && continue
+    case "${path}" in
+      docs/**)
+        ;;
+      bin/**|scripts/**)
+        if [[ "${suite}" == "docs-only" ]]; then
+          suite="scripts-only"
+        fi
+        ;;
+      src/**|tests/**|pyproject.toml|.github/workflows/**)
+        suite="code"
+        break
+        ;;
+      *)
+        suite="code"
+        break
+        ;;
+    esac
+  done < <(git diff --name-only "${base_ref}" HEAD || true)
+
+  echo "${suite}"
+}
+
+select_release_suite() {
+  if [[ "${MK_RELEASE_FULL:-0}" == "1" ]]; then
+    echo "code"
+    return 0
+  fi
+  if [[ "${MK_RELEASE_SMOKE:-0}" == "1" ]]; then
+    echo "scripts-only"
+    return 0
+  fi
+  classify_release_suite
+}
+
+echo "Selecting test scope..."
+test_suite="$(select_release_suite)"
+echo "Selected test suite: ${test_suite}"
+case "${test_suite}" in
+  docs-only)
+    echo "Docs-only changes detected; skipping pytest."
+    ;;
+  scripts-only)
+    echo "Running scripts-only smoke tests..."
+    python3 -m pytest -q "${SMOKE_TESTS[@]}"
+    ;;
+  code)
+    echo "Running full test suite..."
+    python3 -m pytest -q
+    ;;
+  *)
+    echo "ERROR: unknown test suite '${test_suite}'" >&2
+    exit 1
+    ;;
+esac
 
 
 echo "Building procurement pack..."
