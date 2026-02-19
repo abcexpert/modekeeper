@@ -901,7 +901,7 @@
 
 - ID: MK-110
   Title: Optional trust-chain verification mode (root -> issuer signed keyset)
-  Status: TODO
+  Status: DONE
   Owner: oleg
   DoD:
     - Реализовать конфигурируемый режим chain verification (по умолчанию off; allowlist-by-kid остаётся default).
@@ -911,6 +911,13 @@
       - bad keyset signature -> block
       - valid keyset signature + valid license -> pass
     - Документация: migration/rotation workflow для chain mode.
+  Evidence (2026-02-19):
+    - src/modekeeper/license/verify.py
+    - src/modekeeper/cli.py
+    - tests/test_mk110_trust_chain_verify.py
+    - docs/WORKFLOW.md
+    - docs/INTERNAL_LICENSE_ISSUANCE.md
+    - verification: `pytest -q tests/test_mk110_trust_chain_verify.py tests/test_mk082_license_verify.py tests/test_mk086_license_kid_and_rotation.py`
 
 - ID: MK-087
   Title: Trainer v1: replace pause image with minimal knob-aware container + stdout visibility

@@ -4810,6 +4810,9 @@ def cmd_license_verify(args: argparse.Namespace) -> int:
     verify = verify_license(
         license_path,
         kubectl=os.environ.get("KUBECTL", args.kubectl),
+        trust_chain=bool(args.trust_chain),
+        issuer_keyset_path=Path(args.issuer_keyset) if args.issuer_keyset else None,
+        public_keys_path=Path(args.root_public_keys) if args.root_public_keys else None,
     )
     latest_path = out_dir / "license_verify_latest.json"
     latest_path.write_text(
@@ -5498,6 +5501,28 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Path to license JSON (default: MODEKEEPER_LICENSE_PATH, "
             "else ${HOME}/.config/modekeeper/license.json)"
+        ),
+    )
+    license_verify.add_argument(
+        "--trust-chain",
+        action="store_true",
+        help=(
+            "Enable trust-chain verification: root public key allowlist verifies "
+            "issuer keyset signature, then issuer keys verify license"
+        ),
+    )
+    license_verify.add_argument(
+        "--issuer-keyset",
+        help=(
+            "Path to issuer keyset JSON (required with --trust-chain). "
+            "Expected schema: issuer_keyset.v1"
+        ),
+    )
+    license_verify.add_argument(
+        "--root-public-keys",
+        help=(
+            "Path to root public key allowlist JSON map {kid->pubkey_b64_raw32}. "
+            "Without --trust-chain this path acts as a direct keyring override."
         ),
     )
     license_verify.add_argument("--out", default="report/_license_verify", help="Output directory")

@@ -185,8 +185,17 @@ MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH=./license_dev_public_keys.json MODEKEEPER_LI
 `mk license verify` artifact now includes: `license_ok`, `kid`, `issuer`, `expiry`, `entitlements`, `reason_code`, `failure_code`, `failure_detail`.
 
 ### Optional trust chain mode
-- Trust chain mode (`root -> issuer signed keyset -> license`) is explicitly deferred.
-- Current production path is allowlist by `kid` (offline, deterministic).
+- Trust chain mode (`root -> issuer signed keyset -> license`) is optional and explicit:
+  - `mk license verify --trust-chain --issuer-keyset ./issuer_keyset.json --root-public-keys ./root_public_keys.json --license ./license.json --out ./report/_license_verify`
+- Signature contract for issuer keyset:
+  - schema: `issuer_keyset.v1`
+  - fields: `root_kid`, `keys` (`{kid -> pubkey_b64_raw32}`), `signature`
+  - signature input: canonical JSON (`sort_keys=True`, `separators=(',',':')`) of keyset object without `signature`.
+- Verify semantics in trust-chain mode:
+  - unknown `root_kid` => `license_invalid`
+  - bad keyset signature => `license_invalid`
+  - unknown license `kid` in issuer keyset => `license_invalid`
+- Default path remains backward-compatible allowlist-by-`kid` when `--trust-chain` is not set.
 
 ### Canonical kind/e2e scripts
 ```
