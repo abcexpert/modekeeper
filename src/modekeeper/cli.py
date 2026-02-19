@@ -1088,6 +1088,55 @@ def _write_report(
     return report_path
 
 
+def _write_json_report(path: Path, payload: dict) -> None:
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _report_ts() -> str:
+    return _utc_now().strftime("%Y%m%d_%H%M%S")
+
+
+def _write_latest_with_timestamp(
+    out_dir: Path,
+    *,
+    latest_name: str,
+    prefix: str,
+    payload: dict,
+) -> tuple[Path, Path]:
+    ts_path = out_dir / f"{prefix}_{_report_ts()}.json"
+    latest_path = out_dir / latest_name
+    _write_json_report(ts_path, payload)
+    _write_json_report(latest_path, payload)
+    return latest_path, ts_path
+
+
+def _write_summary_aliases(out_dir: Path, *, legacy_name: str, text: str) -> tuple[Path, Path]:
+    legacy_path = out_dir / legacy_name
+    summary_path = out_dir / "summary.md"
+    legacy_path.write_text(text, encoding="utf-8")
+    summary_path.write_text(text, encoding="utf-8")
+    return summary_path, legacy_path
+
+
+def _resolve_inputs_root(out_dir: Path, explicit: str | None) -> Path:
+    if isinstance(explicit, str) and explicit.strip():
+        return Path(explicit).resolve()
+    return out_dir.parent.resolve()
+
+
+def _find_and_read_json(root: Path, name: str) -> tuple[Path | None, dict | None]:
+    path = _find_first_named(root, name)
+    if path is None:
+        return None, None
+    payload, error = _read_json_best_effort(path)
+    if error:
+        return path, None
+    return path, payload
+
+
 def _try_git_commit(repo_root: Path) -> str | None:
     try:
         cp = subprocess.run(
@@ -2075,6 +2124,288 @@ def _collect_doctor_checks() -> tuple[list[dict], bool]:
     return checks, ok
 
 
+def cmd_preflight(args: argparse.Namespace) -> int:
+    out_dir = _ensure_out_dir(args.out)
+    inputs_root = _resolve_inputs_root(out_dir, getattr(args, "inputs_root", None))
+    started_at = _utc_now()
+    plan_path, plan_report = _find_and_read_json(inputs_root, "closed_loop_latest.json")
+    verify_path, verify_report = _find_and_read_json(inputs_root, "k8s_verify_latest.json")
+
+    verify_ok = verify_report.get("ok") if isinstance(verify_report, dict) else None
+    verify_blocker = verify_report.get("verify_blocker") if isinstance(verify_report, dict) else None
+    top_blocker: str | None = None
+    if isinstance(verify_blocker, dict):
+        blocker_kind = verify_blocker.get("kind")
+        if isinstance(blocker_kind, str) and blocker_kind.strip():
+            top_blocker = blocker_kind.strip()
+    if top_blocker is None and verify_ok is False:
+        top_blocker = "verify_not_ok"
+
+    notes: list[str] = []
+    if plan_path is None:
+        notes.append("missing_closed_loop_latest")
+    elif plan_report is None:
+        notes.append("invalid_closed_loop_latest")
+    if verify_path is None:
+        notes.append("missing_k8s_verify_latest")
+    elif verify_report is None:
+        notes.append("invalid_k8s_verify_latest")
+
+    finished_at = _utc_now()
+    report = {
+        "schema_version": "preflight.v0",
+        "started_at": _format_utc(started_at),
+        "finished_at": _format_utc(finished_at),
+        "duration_s": int((finished_at - started_at).total_seconds()),
+        "read_only": True,
+        "inputs_root": str(inputs_root),
+        "ok": bool(verify_ok is True and top_blocker is None),
+        "top_blocker": top_blocker,
+        "notes": notes,
+        "k8s_namespace": plan_report.get("k8s_namespace") if isinstance(plan_report, dict) else None,
+        "k8s_deployment": plan_report.get("k8s_deployment") if isinstance(plan_report, dict) else None,
+        "verify_ok": verify_ok,
+        "verify_report_path": str(verify_path) if verify_path is not None else None,
+        "plan_report_path": str(plan_path) if plan_path is not None else None,
+        "key_artifacts": [],
+    }
+    summary_lines = [
+        "# Preflight",
+        f"ok: {_report_bool(bool(report['ok']))}",
+        f"top_blocker: {top_blocker or 'n/a'}",
+        f"inputs_root: {inputs_root}",
+        f"verify_ok: {verify_ok}",
+        f"notes: {json.dumps(notes, separators=(',', ':'), ensure_ascii=False)}",
+    ]
+    summary_text = "\n".join(summary_lines) + "\n"
+    summary_path, legacy_summary_path = _write_summary_aliases(
+        out_dir,
+        legacy_name="preflight_summary.md",
+        text=summary_text,
+    )
+    latest_path, ts_path = _write_latest_with_timestamp(
+        out_dir,
+        latest_name="preflight_latest.json",
+        prefix="preflight",
+        payload=report,
+    )
+    report["key_artifacts"] = [str(latest_path), str(ts_path), str(summary_path), str(legacy_summary_path)]
+    _write_json_report(latest_path, report)
+    _write_json_report(ts_path, report)
+    return 0
+
+
+def cmd_eval(args: argparse.Namespace) -> int:
+    out_value = getattr(args, "out", None) or "report/eval"
+    out_dir = _ensure_out_dir(out_value)
+    inputs_root = _resolve_inputs_root(out_dir, getattr(args, "inputs_root", None))
+    started_at = _utc_now()
+    plan_path, plan_report = _find_and_read_json(inputs_root, "closed_loop_latest.json")
+    verify_path, verify_report = _find_and_read_json(inputs_root, "k8s_verify_latest.json")
+    notes: list[str] = []
+    if plan_path is None:
+        notes.append("missing_closed_loop_latest")
+    elif plan_report is None:
+        notes.append("invalid_closed_loop_latest")
+
+    signals = plan_report.get("signals") if isinstance(plan_report, dict) else None
+    if not isinstance(signals, dict):
+        signals = {}
+        notes.append("signals_missing")
+    environment = plan_report.get("environment") if isinstance(plan_report, dict) else None
+    if not isinstance(environment, dict):
+        environment = {}
+        notes.append("environment_missing")
+
+    proposed = plan_report.get("proposed") if isinstance(plan_report, dict) else None
+    proposed_actions_count = len(proposed) if isinstance(proposed, list) else 0
+    verify_ok = verify_report.get("ok") if isinstance(verify_report, dict) else None
+    top_blocker: str | None = None
+    verify_blocker = verify_report.get("verify_blocker") if isinstance(verify_report, dict) else None
+    if isinstance(verify_blocker, dict):
+        kind = verify_blocker.get("kind")
+        if isinstance(kind, str) and kind.strip():
+            top_blocker = kind.strip()
+    if top_blocker is None and verify_ok is False:
+        top_blocker = "verify_not_ok"
+
+    finished_at = _utc_now()
+    report = {
+        "schema_version": "eval.v0",
+        "started_at": _format_utc(started_at),
+        "finished_at": _format_utc(finished_at),
+        "duration_s": int((finished_at - started_at).total_seconds()),
+        "read_only": True,
+        "inputs_root": str(inputs_root),
+        "source": "inputs_root",
+        "ok": bool(top_blocker is None and plan_report is not None),
+        "verify_ok": verify_ok,
+        "top_blocker": top_blocker,
+        "sample_count": plan_report.get("sample_count") if isinstance(plan_report, dict) else None,
+        "signals": signals,
+        "environment": environment,
+        "proposed_actions_count": proposed_actions_count,
+        "notes": sorted(set(notes)),
+        "artifacts": {
+            "plan_report_path": str(plan_path) if plan_path is not None else None,
+            "verify_report_path": str(verify_path) if verify_path is not None else None,
+        },
+        "key_artifacts": [],
+    }
+    summary_lines = [
+        "# Eval",
+        f"ok: {_report_bool(bool(report['ok']))}",
+        f"top_blocker: {top_blocker or 'n/a'}",
+        f"inputs_root: {inputs_root}",
+        f"sample_count: {report.get('sample_count')}",
+        f"proposed_actions_count: {proposed_actions_count}",
+        f"notes: {json.dumps(report['notes'], separators=(',', ':'), ensure_ascii=False)}",
+    ]
+    summary_text = "\n".join(summary_lines) + "\n"
+    summary_path, legacy_summary_path = _write_summary_aliases(
+        out_dir,
+        legacy_name="eval_summary.md",
+        text=summary_text,
+    )
+    latest_path, ts_path = _write_latest_with_timestamp(
+        out_dir,
+        latest_name="eval_latest.json",
+        prefix="eval",
+        payload=report,
+    )
+    report["key_artifacts"] = [str(latest_path), str(ts_path), str(summary_path), str(legacy_summary_path)]
+    _write_json_report(latest_path, report)
+    _write_json_report(ts_path, report)
+    return 0
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    out_dir = _ensure_out_dir(args.out)
+    inputs_root = _resolve_inputs_root(out_dir, getattr(args, "inputs_root", None))
+    duration_s = int(getattr(args, "duration", 60))
+    if duration_s < 1:
+        duration_s = 1
+
+    started_at = _utc_now()
+    plan_path, plan_report = _find_and_read_json(inputs_root, "closed_loop_latest.json")
+    notes: list[str] = []
+    if plan_path is None:
+        notes.append("missing_closed_loop_latest")
+    elif plan_report is None:
+        notes.append("invalid_closed_loop_latest")
+
+    proposed = plan_report.get("proposed") if isinstance(plan_report, dict) else None
+    proposed_total = len(proposed) if isinstance(proposed, list) else 0
+    blocked_reasons = plan_report.get("blocked_reasons") if isinstance(plan_report, dict) else None
+    blocked_total = sum(v for v in blocked_reasons.values() if isinstance(v, int)) if isinstance(blocked_reasons, dict) else 0
+    applied_reasons = plan_report.get("applied_reasons") if isinstance(plan_report, dict) else None
+    applied_total = sum(v for v in applied_reasons.values() if isinstance(v, int)) if isinstance(applied_reasons, dict) else 0
+
+    finished_at = _utc_now()
+    report = {
+        "schema_version": "v0",
+        "started_at": _format_utc(started_at),
+        "finished_at": _format_utc(finished_at),
+        "duration_s": duration_s,
+        "interval_s": duration_s,
+        "max_iterations": 1,
+        "iterations_done": 1 if plan_report is not None else 0,
+        "last_iteration_out_dir": str(plan_path.parent) if plan_path is not None else None,
+        "proposed_total": proposed_total,
+        "blocked_total": blocked_total,
+        "applied_total": applied_total,
+        "verify_failed_total": 0,
+        "apply_attempted_total": 0,
+        "apply_ok_total": 0,
+        "apply_failed_total": 0,
+        "dry_run_total": 1 if plan_report is not None else 0,
+        "read_only": True,
+        "inputs_root": str(inputs_root),
+        "ok": bool(plan_report is not None),
+        "top_blocker": None if plan_report is not None else "missing_closed_loop_latest",
+        "notes": sorted(set(notes)),
+        "observe_ingest": plan_report.get("observe_ingest") if isinstance(plan_report, dict) else None,
+        "observe_record_raw_path": None,
+        "observe_record_raw_lines_written": None,
+        "artifact_paths": {
+            "watch_latest_path": str(out_dir / "watch_latest.json"),
+            "watch_summary_path": str(out_dir / "watch_summary.md"),
+            "last_iteration_report_path": str(plan_path) if plan_path is not None else None,
+            "last_iteration_explain_path": str((plan_path.parent / "explain.jsonl")) if plan_path is not None else None,
+        },
+        "key_artifacts": [],
+    }
+    summary_lines = [
+        "# Watch",
+        f"ok: {_report_bool(bool(report['ok']))}",
+        f"inputs_root: {inputs_root}",
+        f"duration_s: {duration_s}",
+        f"iterations_done: {report.get('iterations_done')}",
+        f"proposed_total: {proposed_total}",
+        f"blocked_total: {blocked_total}",
+        f"applied_total: {applied_total}",
+        f"notes: {json.dumps(report['notes'], separators=(',', ':'), ensure_ascii=False)}",
+    ]
+    summary_text = "\n".join(summary_lines) + "\n"
+    summary_path, legacy_summary_path = _write_summary_aliases(
+        out_dir,
+        legacy_name="watch_summary.md",
+        text=summary_text,
+    )
+    latest_path, ts_path = _write_latest_with_timestamp(
+        out_dir,
+        latest_name="watch_latest.json",
+        prefix="watch",
+        payload=report,
+    )
+    report["key_artifacts"] = [str(latest_path), str(ts_path), str(summary_path), str(legacy_summary_path)]
+    _write_json_report(latest_path, report)
+    _write_json_report(ts_path, report)
+    return 0
+
+
+def cmd_roi(args: argparse.Namespace) -> int:
+    out_value = getattr(args, "out", None) or "report/roi"
+    out_dir = _ensure_out_dir(out_value)
+    inputs_root = _resolve_inputs_root(out_dir, getattr(args, "inputs_root", None))
+    preflight_path = inputs_root / "preflight" / "preflight_latest.json"
+    eval_path = inputs_root / "eval" / "eval_latest.json"
+    watch_path = inputs_root / "watch" / "watch_latest.json"
+    rc = cmd_roi_report(
+        argparse.Namespace(
+            preflight=str(preflight_path),
+            eval=str(eval_path),
+            watch=str(watch_path),
+            out=str(out_dir),
+        )
+    )
+    if rc != 0:
+        return rc
+    latest_path = out_dir / "roi_latest.json"
+    summary_path = out_dir / "roi_summary.md"
+    latest_payload, error = _read_json_best_effort(latest_path)
+    if error or not isinstance(latest_payload, dict):
+        return 2
+    latest_payload["inputs_root"] = str(inputs_root)
+    _write_json_report(latest_path, latest_payload)
+    ts_path = out_dir / f"roi_{_report_ts()}.json"
+    _write_json_report(ts_path, latest_payload)
+    if summary_path.exists():
+        (out_dir / "summary.md").write_text(summary_path.read_text(encoding="utf-8"), encoding="utf-8")
+    key_artifacts = latest_payload.get("key_artifacts")
+    if isinstance(key_artifacts, list):
+        key_artifacts = [item for item in key_artifacts if isinstance(item, str)]
+    else:
+        key_artifacts = []
+    for path in (str(ts_path), str(out_dir / "summary.md")):
+        if path not in key_artifacts:
+            key_artifacts.append(path)
+    latest_payload["key_artifacts"] = sorted(set(key_artifacts))
+    _write_json_report(latest_path, latest_payload)
+    _write_json_report(ts_path, latest_payload)
+    return 0
+
+
 def cmd_doctor(_args: argparse.Namespace) -> int:
     checks, ok = _collect_doctor_checks()
     for check in checks:
@@ -2117,6 +2448,10 @@ def _write_quickstart_summary(
         f"- doctor summary: {out_dir / 'doctor' / 'summary.md'}",
         f"- plan report: {out_dir / 'plan' / 'closed_loop_latest.json'}",
         f"- verify report: {out_dir / 'verify' / 'k8s_verify_latest.json'}",
+        f"- preflight report: {out_dir / 'preflight' / 'preflight_latest.json'}",
+        f"- eval report: {out_dir / 'eval' / 'eval_latest.json'}",
+        f"- watch report: {out_dir / 'watch' / 'watch_latest.json'}",
+        f"- roi report: {out_dir / 'roi' / 'roi_latest.json'}",
         f"- export manifest: {export_out_dir / 'bundle_manifest.json'}",
         f"- export tar: {export_out_dir / 'bundle.tar.gz'}",
         f"- export summary: {export_out_dir / 'bundle_summary.md'}",
@@ -2216,6 +2551,25 @@ def cmd_quickstart(args: argparse.Namespace) -> int:
     verify_rc, _, verify_report = _run_k8s_verify(k8s_plan_path, verify_out_dir, verify_explain)
     if verify_rc != 0:
         return verify_rc
+
+    eval_rc = cmd_eval(argparse.Namespace(out=str(out_dir / "eval"), inputs_root=str(out_dir)))
+    if eval_rc != 0:
+        return eval_rc
+    preflight_rc = cmd_preflight(argparse.Namespace(out=str(out_dir / "preflight"), inputs_root=str(out_dir)))
+    if preflight_rc != 0:
+        return preflight_rc
+    watch_rc = cmd_watch(
+        argparse.Namespace(
+            out=str(out_dir / "watch"),
+            inputs_root=str(out_dir),
+            duration=max(1, int(_duration_ms_to_seconds(observe_duration_ms))),
+        )
+    )
+    if watch_rc != 0:
+        return watch_rc
+    roi_rc = cmd_roi(argparse.Namespace(out=str(out_dir / "roi"), inputs_root=str(out_dir)))
+    if roi_rc != 0:
+        return roi_rc
 
     export_out_dir = out_dir / "export"
     export_rc = cmd_export_bundle(
@@ -3868,9 +4222,19 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
         summary_path = found.parent / summary_name
         if summary_path.exists() and summary_path.is_file():
             include_paths[summary_path.resolve().as_posix()] = summary_path
+        generic_summary_path = found.parent / "summary.md"
+        if generic_summary_path.exists() and generic_summary_path.is_file():
+            include_paths[generic_summary_path.resolve().as_posix()] = generic_summary_path
         explain_path = found.parent / "explain.jsonl"
         if explain_path.exists() and explain_path.is_file():
             include_paths[explain_path.resolve().as_posix()] = explain_path
+        prefix = name.replace("_latest.json", "")
+        ts_pattern = re.compile(rf"^{re.escape(prefix)}_\d{{8}}_\d{{6}}\.json$")
+        for sibling in sorted(found.parent.iterdir()):
+            if not sibling.is_file():
+                continue
+            if ts_pattern.match(sibling.name):
+                include_paths[sibling.resolve().as_posix()] = sibling
 
     eval_report, _ = _read_json_best_effort(selected_paths["eval_latest.json"]) if "eval_latest.json" in selected_paths else (None, None)
     watch_report, _ = _read_json_best_effort(selected_paths["watch_latest.json"]) if "watch_latest.json" in selected_paths else (None, None)
@@ -4506,8 +4870,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     quickstart.set_defaults(func=cmd_quickstart)
 
+    preflight = sub.add_parser("preflight", help="Buyer-safe preflight report (read-only)")
+    preflight.add_argument("--out", required=True, help="Output directory")
+    preflight.add_argument("--inputs-root", help=argparse.SUPPRESS)
+    preflight.set_defaults(func=cmd_preflight)
+
     eval_cmd = sub.add_parser("eval", help="Customer-safe evaluation (read-only)")
-    eval_sub = eval_cmd.add_subparsers(dest="subcommand", required=True)
+    eval_cmd.set_defaults(func=cmd_eval)
+    eval_cmd.add_argument("--out", help="Output directory for top-level eval report")
+    eval_cmd.add_argument("--inputs-root", help=argparse.SUPPRESS)
+    eval_sub = eval_cmd.add_subparsers(dest="subcommand", required=False)
     eval_file = eval_sub.add_parser("file", help="Evaluate from file telemetry (read-only)")
     eval_file.add_argument("--path", required=True, help="Path to metrics file (.jsonl or .csv)")
     eval_file.add_argument(
@@ -4689,6 +5061,17 @@ def build_parser() -> argparse.ArgumentParser:
     watch_apply_group.add_argument("--apply", action="store_true", help="Apply actions")
     closed_watch.set_defaults(func=cmd_closed_loop_watch)
 
+    watch = sub.add_parser("watch", help="Buyer-safe watch summary artifact (read-only)")
+    watch.add_argument("--out", required=True, help="Output directory")
+    watch.add_argument(
+        "--duration",
+        type=int,
+        default=60,
+        help="Synthetic watch duration in seconds for rollup metadata",
+    )
+    watch.add_argument("--inputs-root", help=argparse.SUPPRESS)
+    watch.set_defaults(func=cmd_watch)
+
     demo = sub.add_parser("demo", help="Run demo scenarios")
     demo_sub = demo.add_subparsers(dest="subcommand", required=True)
     demo_run = demo_sub.add_parser("run", help="Run a demo scenario")
@@ -4748,7 +5131,10 @@ def build_parser() -> argparse.ArgumentParser:
     fleet_policy.set_defaults(func=cmd_fleet_policy)
 
     roi = sub.add_parser("roi", help="ROI reports")
-    roi_sub = roi.add_subparsers(dest="subcommand", required=True)
+    roi.set_defaults(func=cmd_roi)
+    roi.add_argument("--out", help="Output directory for top-level roi report")
+    roi.add_argument("--inputs-root", help=argparse.SUPPRESS)
+    roi_sub = roi.add_subparsers(dest="subcommand", required=False)
     roi_mk074 = roi_sub.add_parser("mk074", help="Build MK-074 before/after ROI report")
     roi_mk074.add_argument(
         "--observe-source",
