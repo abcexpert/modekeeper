@@ -74,6 +74,7 @@ echo "[2/7] build buyer pack: $BUYER_OUT"
 ./bin/mk-buyer-pack --out "$BUYER_OUT"
 
 echo "[3/7] copy procurement docs"
+cp -a docs/ROADMAP_PUBLIC.md "$OUT_DIR/docs/"
 for path in "${DOCS_TO_COPY[@]}"; do
   require_file "$path"
   cp "$path" "$DOCS_OUT/"
