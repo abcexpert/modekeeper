@@ -54,15 +54,27 @@ read_pyproject_version() {
   local pyproject_path="$1"
   python3 - "$pyproject_path" <<'PY'
 from pathlib import Path
+import re
 import sys
-import tomllib
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:
+    tomllib = None
 
 path = Path(sys.argv[1])
 if not path.exists():
     raise SystemExit(f"pyproject.toml not found: {path}")
 
-obj = tomllib.loads(path.read_text(encoding="utf-8"))
-version = ((obj.get("project") or {}).get("version") or "").strip()
+text = path.read_text(encoding="utf-8")
+if tomllib is not None:
+    obj = tomllib.loads(text)
+    version = ((obj.get("project") or {}).get("version") or "").strip()
+else:
+    # Fallback for Python 3.10: read top-level `version = "X.Y.Z"` directly.
+    match = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"\s*$', text)
+    version = (match.group(1).strip() if match else "")
+
 if not version:
     raise SystemExit(f"project.version is missing in {path}")
 print(version)
