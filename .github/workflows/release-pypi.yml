@@ -21,9 +21,13 @@ jobs:
           python-version: "3.10"
       - run: python -m pip install -U pip build
       - run: python -m build --wheel
-      - name: Guard: no sdist artifacts
+      - name: Guard (no sdist artifacts)
+        shell: bash
         run: |
-          if compgen -G "dist/*.tar.gz" > /dev/null; then
+          set -euo pipefail
+          shopt -s nullglob
+          sdists=(dist/*.tar.gz)
+          if (( ${#sdists[@]} )); then
             echo "ERROR: source distributions are not allowed for public PyPI release."
             ls -1 dist
             exit 1
