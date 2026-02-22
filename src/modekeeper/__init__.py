@@ -1,4 +1,9 @@
 """ModeKeeper package."""
 
 __all__ = ["__version__"]
-__version__ = "0.1.21"
+from importlib.metadata import PackageNotFoundError, version as _dist_version
+
+try:
+    __version__ = _dist_version("modekeeper")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
