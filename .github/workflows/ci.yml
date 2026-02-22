@@ -23,6 +23,11 @@ jobs:
             exit 1
           fi
 
+      - name: Bash syntax check (release script)
+        run: |
+          set -Eeuo pipefail
+          bash -n scripts/mk-release-all.sh
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
