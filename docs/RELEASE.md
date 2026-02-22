@@ -19,6 +19,8 @@ Test scope is selected from changed paths versus latest `v*` tag (fallback `orig
 2. Merge to `main` before release.
 3. Run only `./scripts/release_public.sh` for public release.
 4. Do not commit `report/**`; publish procurement artifacts as GitHub Release assets.
+5. Public PyPI release is wheel-only; no source distribution (`.tar.gz`) is allowed.
+6. If an sdist is present on PyPI, delete the `.tar.gz` file from the PyPI project release UI.
 
 ## Version checks
 
