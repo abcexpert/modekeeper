@@ -101,17 +101,17 @@ CLI entrypoints:
   - confirmed from docs: `/root/modekeeper-private`
 - Bare remotes pattern on abc2: `/home/oleg/*.git`
   - confirmed from docs: `/home/oleg/modekeeper-private-remote.git`
-- Vault pattern: `/root/modekeeper-vault/*`
-  - confirmed from docs: `/root/modekeeper-vault/licenses/issuer_keys/`, `/root/modekeeper-vault/licenses/ops/`, `/root/modekeeper-vault/procurement_pack/`, `/root/modekeeper-vault/releases/signing_keys/`
+- Vault pattern: `<VAULT_PATH>/*`
+  - confirmed from docs: `<VAULT_PATH>/licenses/issuer_keys/`, `<VAULT_PATH>/licenses/ops/`, `<VAULT_PATH>/procurement_pack/`, `<VAULT_PATH>/releases/signing_keys/`
 - Backups pattern: `/root/backups/*`
   - confirmed from docs: `/root/backups/modekeeper-private/`
 
-Правило: никогда не пушить vault (ни содержимое `/root/modekeeper-vault/*`, ни любые секреты/ключи из vault в git/PyPI/GitHub Releases).
+Правило: никогда не пушить vault (ни содержимое `<VAULT_PATH>/*`, ни любые секреты/ключи из vault в git/PyPI/GitHub Releases).
 
 ## Next action
 - Next action: `MK-129` (Licensing v2 trust chain) — верхний приоритет по зависимости `license -> ...`.
 - CHECK перед стартом фикса:
   - подтверждён source-of-truth: `/home/oleg/code/modekeeper-private/docs/TICKETS.md` (тикет `MK-129` всё ещё `TODO`);
   - есть отдельные тест-кейсы на `valid chain / unknown issuer / expired issuer cert / revoked issuer`;
-  - не используются и не коммитятся реальные vault-ключи (`/root/modekeeper-vault/**` только runtime/ops, не git);
+  - не используются и не коммитятся реальные vault-ключи (`<VAULT_PATH>/**` только runtime/ops, не git);
   - контракт ошибок gate детерминирован (reason-коды и non-zero exit) и совместим с текущими `license/apply` entrypoints.
