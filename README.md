@@ -5,6 +5,18 @@
 
 ModeKeeper is a verify-first operations agent for SRE, MLOps, and FinOps teams. The public runtime is customer-safe and read-only by default; apply is licensed and hard-gated.
 
+<!-- MK_RELEASE_CHANNELS_START -->
+## Release channels and versioning
+
+- **Public (OSS / read-only):** this repository + PyPI package `modekeeper` (wheel-only). GitHub Releases here track the public package.
+- **Enterprise PRO (licensed / gated apply):** delivered separately as **notes-only** release metadata + vault-only deliverables (no GitHub assets attached).
+- **Why numbers can differ:** public and PRO ship independently; the canonical PRO deliverable is always recorded in:
+  - `docs/PROJECT_FINAL.md` (entrypoint)
+  - `docs/STATUS.md` / `docs/SNAPSHOT.md` (latest release + vault + SHA256)
+
+<!-- MK_RELEASE_CHANNELS_END -->
+
+
 ## Contact
 Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
 
