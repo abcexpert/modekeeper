@@ -8,20 +8,25 @@ export DEV_SHELL_QUIET=1
 source ./scripts/dev-shell.sh
 
 out_dir="report/_smoke"
-MODEKEEPER_PAID=1 MODEKEEPER_KILL_SWITCH=1 mk closed-loop run --scenario drift --apply --out "$out_dir"
+set +e
+apply_output="$(
+  MODEKEEPER_PAID=1 MODEKEEPER_KILL_SWITCH=1 \
+    mk closed-loop run --scenario drift --apply --out "$out_dir" 2>&1
+)"
+apply_rc=$?
+set -e
 
-report_path="$out_dir/closed_loop_latest.json"
-
-jq -e '.schema_version == "v0"' "$report_path" >/dev/null
-jq -e '.apply_requested == true' "$report_path" >/dev/null
-jq -e '.apply_blocked_reason == "kill_switch"' "$report_path" >/dev/null
-
-verify_path="$(jq -r '.k8s_verify_report_path' "$report_path")"
-if [[ -z "$verify_path" || ! -f "$verify_path" ]]; then
-  echo "ERROR: k8s_verify_report_path missing or not found: $verify_path" >&2
-  exit 2
+if [[ $apply_rc -eq 0 ]]; then
+  echo "ERROR: apply unexpectedly succeeded while MODEKEEPER_KILL_SWITCH=1 was enabled" >&2
+  printf '%s\n' "$apply_output" >&2
+  exit 1
 fi
 
-jq -e '(.results | length) == (.proposed | length)' "$report_path" >/dev/null
+if grep -Fq "MODEKEEPER_KILL_SWITCH=1 blocks apply/mutate operations" <<<"$apply_output"; then
+  echo "OK: kill-switch enforced (expected)"
+  exit 0
+fi
 
-echo "PASS: e2e smoke (kind) - kill switch blocked apply"
+echo "ERROR: mk closed-loop run failed with unexpected error" >&2
+printf '%s\n' "$apply_output" >&2
+exit "$apply_rc"
