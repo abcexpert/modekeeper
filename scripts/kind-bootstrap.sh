@@ -133,7 +133,7 @@ log "loading modekeeper-trainer:dev into kind cluster '$cluster_name'"
 kind load docker-image modekeeper-trainer:dev --name "$cluster_name"
 
 log "applying k8s/trainer-minimal.yaml"
-kubectl apply -f k8s/trainer-minimal.yaml
+kubectl apply --server-side --field-manager=modekeeper-e2e -f k8s/trainer-minimal.yaml
 
 log "waiting for deployment/trainer rollout"
 kubectl rollout status deployment/trainer --timeout=120s
