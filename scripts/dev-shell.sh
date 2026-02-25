@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-cd "$(dirname "$0")/.."
+this_file="${BASH_SOURCE[0]:-$0}"
+this_dir="$(cd -- "$(dirname -- "$this_file")" && pwd -P)"
+
+cd -- "$this_dir/.."
 
 if [[ ! -d .venv ]]; then
   echo "ERROR: .venv not found (expected in repo root)" >&2
