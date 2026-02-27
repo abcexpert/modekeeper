@@ -2158,6 +2158,7 @@ def _collect_observe_samples(
     observe_duration_ms: int,
     observe_record_raw_path: Path | None,
     observe_record_raw_mode: str,
+    k8s_pod: str | None = None,
     required_path_flag: str = "--observe-path",
     required_source_flag: str = "--observe-source",
 ) -> tuple[list, object]:
@@ -2174,6 +2175,7 @@ def _collect_observe_samples(
             namespace=k8s_namespace,
             deployment=k8s_deployment,
             container=observe_container,
+            k8s_pod=k8s_pod,
             duration_ms=observe_duration_ms,
             record_raw_path=observe_record_raw_path,
             record_raw_mode=observe_record_raw_mode,
@@ -2707,6 +2709,7 @@ def cmd_observe(args: argparse.Namespace) -> int:
         k8s_namespace=args.k8s_namespace,
         k8s_deployment=args.k8s_deployment,
         observe_container=args.container,
+        k8s_pod=args.k8s_pod,
         observe_duration_ms=duration_ms,
         observe_record_raw_path=record_raw_path,
         observe_record_raw_mode=record_raw_mode,
@@ -5087,6 +5090,7 @@ def build_parser() -> argparse.ArgumentParser:
     observe.add_argument("--k8s-namespace", default="default", help="K8s namespace")
     observe.add_argument("--k8s-deployment", default="trainer", help="K8s deployment")
     observe.add_argument("--container", default="auto", help="K8s container name")
+    observe.add_argument("--k8s-pod", default=None, help="K8s pod name")
     observe.add_argument("--out", default="report", help="Output directory")
     observe.set_defaults(func=cmd_observe)
 

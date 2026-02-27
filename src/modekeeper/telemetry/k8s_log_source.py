@@ -222,6 +222,7 @@ class K8sLogSource(TelemetrySource):
     deployment: str
     container: str
     duration_ms: int
+    k8s_pod: str | None = None
     record_raw_path: Path | None = None
     record_raw_mode: str = "w"
     timeout_s: float = 20.0
@@ -261,6 +262,10 @@ class K8sLogSource(TelemetrySource):
         return _to_optional_text(annotations.get(_TELEMETRY_ANNOTATION))
 
     def _best_effort_select_pod(self, kubectl_bin: str) -> tuple[str | None, str | None, str | None]:
+        explicit_pod = _to_optional_text(self.k8s_pod)
+        if explicit_pod is not None:
+            # Pinning the pod avoids tailing older rollout pods that may not include the sidecar yet.
+            return explicit_pod, None, None
         # Best-effort only; failures should not block logs collection.
         argv = [
             kubectl_bin,
@@ -283,7 +288,11 @@ class K8sLogSource(TelemetrySource):
         items = payload.get("items")
         if not isinstance(items, list):
             return None, None, None
+        requested_container = str(self.container or "").strip()
+        if requested_container == "auto":
+            requested_container = ""
         candidates: list[tuple[str, str | None, str | None]] = []
+        container_matches: list[tuple[str, str | None, str | None, str]] = []
         for item in items:
             if not isinstance(item, dict):
                 continue
@@ -298,7 +307,24 @@ class K8sLogSource(TelemetrySource):
             telemetry_mode: str | None = None
             if isinstance(annotations, dict):
                 telemetry_mode = _to_optional_text(annotations.get(_TELEMETRY_ANNOTATION))
-            candidates.append((pod_name, _to_optional_text(spec.get("nodeName")), telemetry_mode))
+            node_name = _to_optional_text(spec.get("nodeName"))
+            candidates.append((pod_name, node_name, telemetry_mode))
+            if requested_container:
+                containers = spec.get("containers")
+                if isinstance(containers, list):
+                    has_container = any(
+                        isinstance(container_spec, dict)
+                        and _to_optional_text(container_spec.get("name")) == requested_container
+                        for container_spec in containers
+                    )
+                    if has_container:
+                        created_at = _to_optional_text(meta.get("creationTimestamp")) or ""
+                        container_matches.append((pod_name, node_name, telemetry_mode, created_at))
+        if requested_container and container_matches:
+            # Prefer the newest pod with the requested container to avoid picking an
+            # older pod instance that may not have the expected telemetry sidecar.
+            newest = max(container_matches, key=lambda entry: entry[3])
+            return newest[0], newest[1], newest[2]
         if not candidates:
             return None, None, None
         candidates.sort(key=lambda pair: pair[0])
@@ -319,11 +345,7 @@ class K8sLogSource(TelemetrySource):
             "logs",
             "-n",
             self.namespace,
-            (
-                f"pod/{selected_pod_name}"
-                if selected_pod_name
-                else f"deployment/{self.deployment}"
-            ),
+            (selected_pod_name if selected_pod_name else f"deployment/{self.deployment}"),
         ]
         container = str(self.container or "").strip()
         if container and container != "auto":
