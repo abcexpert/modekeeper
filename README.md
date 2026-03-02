@@ -13,6 +13,7 @@ Use these buyer materials. Canonical path: procurement pack.
 - Proof-pack map: [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md)
 - Buyer request checklist (pilot intake): [`docs/BUYER_REQUEST_CHECKLIST.md`](docs/BUYER_REQUEST_CHECKLIST.md)
 - 20-min discovery call script: [`docs/OUTREACH_CALL_20MIN.md`](docs/OUTREACH_CALL_20MIN.md)
+- Outreach email templates: [`docs/OUTREACH_EMAIL.md`](docs/OUTREACH_EMAIL.md)
 
 ```bash
 ./bin/mk-procurement-pack
