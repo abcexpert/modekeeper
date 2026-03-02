@@ -18,6 +18,7 @@ Navigation hub for current project documentation.
 - [Procurement pack](PROCUREMENT_PACK.md)
 - [Buyer proof pack](BUYER_PROOF_PACK.md)
 - [Proof packs overview](PROOF_PACKS.md)
+- [10-minute buyer script](BUYER_10MIN.md)
 
 ## Security and compliance
 - [Security posture](SECURITY_POSTURE.md)
