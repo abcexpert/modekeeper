@@ -16,6 +16,17 @@ Use these buyer materials. Canonical path: procurement pack.
 - 20-min discovery call script: [`docs/OUTREACH_CALL_20MIN.md`](docs/OUTREACH_CALL_20MIN.md)
 - Outreach email templates: [`docs/OUTREACH_EMAIL.md`](docs/OUTREACH_EMAIL.md)
 
+Proof snippet (synthetic replay, read-only):
+- Run: `./scripts/e2e-synthetic-proofs-replay.sh`
+- Inspect the multi-signal “combo” summary (example):
+
+```text
+# Scenario: combo
+- trace: docs/evidence/mk060/observe_raw.jsonl
+- active_signals: burst, drift
+- k8s_plan_items: (see generated summary)
+```
+
 ```bash
 ./bin/mk-procurement-pack
 ```
