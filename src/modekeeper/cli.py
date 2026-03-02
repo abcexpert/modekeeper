@@ -43,6 +43,10 @@ from modekeeper.fleet.inventory import collect_inventory
 from modekeeper.fleet.policy_propagation import collect_policy_propagation
 from modekeeper.k8s.rbac_diagnostics import parse_k8s_forbidden
 from modekeeper.license.verify import verify_license
+from modekeeper.roi.before_after import (
+    build_roi_before_after_summary,
+    summarize_latencies,
+)
 from modekeeper.passports import (
     PassportValidationError,
     list_templates as passports_list_templates,
@@ -3886,6 +3890,78 @@ def cmd_roi_mk074(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_roi_before_after(args: argparse.Namespace) -> int:
+    out_dir = _ensure_out_dir(args.out)
+    started_at = _utc_now()
+    try:
+        baseline_path = Path(args.baseline_path)
+        candidate_path = Path(args.candidate_path)
+        baseline_samples = FileSource(path=baseline_path).read()
+        candidate_samples = FileSource(path=candidate_path).read()
+    except (Exception, SystemExit) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+    baseline = summarize_latencies(baseline_samples)
+    candidate = summarize_latencies(candidate_samples)
+    summary = build_roi_before_after_summary(
+        baseline_p50_ms=float(baseline["p50_ms"]),
+        candidate_p50_ms=float(candidate["p50_ms"]),
+        usd_per_gpu_hour=float(args.usd_per_gpu_hour),
+        gpus=int(args.gpus),
+        hours_per_month=int(args.hours_per_month),
+    )
+
+    notes: list[str] = []
+    errors: list[str] = []
+    baseline_count = int(baseline["samples"])
+    candidate_count = int(candidate["samples"])
+    baseline_p50_ms = float(baseline["p50_ms"])
+    candidate_p50_ms = float(candidate["p50_ms"])
+
+    if baseline_count == 0:
+        notes.append("baseline_samples_empty")
+    if candidate_count == 0:
+        notes.append("candidate_samples_empty")
+    if baseline_count < 2:
+        errors.append(f"baseline requires at least 2 samples (got {baseline_count})")
+    if candidate_count < 2:
+        errors.append(f"candidate requires at least 2 samples (got {candidate_count})")
+    if baseline_p50_ms <= 0:
+        notes.append("baseline_p50_ms_invalid")
+        errors.append(f"baseline p50_ms must be > 0 (got {baseline_p50_ms})")
+    if candidate_p50_ms <= 0:
+        notes.append("candidate_p50_ms_invalid")
+        errors.append(f"candidate p50_ms must be > 0 (got {candidate_p50_ms})")
+
+    finished_at = _utc_now()
+    report = {
+        "schema_version": "roi_before_after.v0",
+        "started_at": _format_utc(started_at),
+        "finished_at": _format_utc(finished_at),
+        "paths": {
+            "baseline_path": str(baseline_path),
+            "candidate_path": str(candidate_path),
+        },
+        "baseline": baseline,
+        "candidate": candidate,
+        "summary": summary,
+        "notes": sorted(set(notes)),
+    }
+    _write_latest_with_timestamp(
+        out_dir,
+        latest_name="roi_before_after_latest.json",
+        prefix="roi_before_after",
+        payload=report,
+    )
+
+    if errors:
+        for message in errors:
+            print(f"ERROR: {message}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_roi_estimate(args: argparse.Namespace) -> int:
     out_dir = _ensure_out_dir(args.out)
     try:
@@ -5330,6 +5406,44 @@ def build_parser() -> argparse.ArgumentParser:
     )
     roi_mk074.add_argument("--out", required=True, help="Output directory")
     roi_mk074.set_defaults(func=cmd_roi_mk074)
+    roi_before_after = roi_sub.add_parser(
+        "before-after",
+        help="Compare baseline/candidate telemetry and estimate USD savings",
+    )
+    roi_before_after.add_argument(
+        "--baseline-path",
+        required=True,
+        help="Path to baseline telemetry file (.jsonl/.csv)",
+    )
+    roi_before_after.add_argument(
+        "--candidate-path",
+        required=True,
+        help="Path to candidate telemetry file (.jsonl/.csv)",
+    )
+    roi_before_after.add_argument(
+        "--usd-per-gpu-hour",
+        type=float,
+        default=2.0,
+        help="USD cost per GPU-hour (default: 2.0)",
+    )
+    roi_before_after.add_argument(
+        "--gpus",
+        type=int,
+        default=1,
+        help="Number of GPUs assumed for savings estimate (default: 1)",
+    )
+    roi_before_after.add_argument(
+        "--hours-per-month",
+        type=int,
+        default=730,
+        help="Hours per month for projection (default: 730)",
+    )
+    roi_before_after.add_argument(
+        "--out",
+        default="report/_roi_before_after",
+        help="Output directory (default: report/_roi_before_after)",
+    )
+    roi_before_after.set_defaults(func=cmd_roi_before_after)
     roi_estimate = roi_sub.add_parser("estimate", help="Build non-actionable free ROI estimate")
     roi_estimate.add_argument(
         "--observe-source",
