@@ -16,6 +16,7 @@ Test scope is selected from changed paths versus latest `v*` tag (fallback `orig
 ## Public release rules
 
 1. Version bump and changelog are prepared in a PR first.
+How to wait checks: bin/gh-pr-wait-checks <PR_NUMBER> --repo owner/repo
 2. Merge to `main` before release.
 3. Run only `./scripts/release_public.sh` for public release.
 4. Do not commit `report/**`; publish procurement artifacts as GitHub Release assets.
