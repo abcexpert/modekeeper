@@ -27,6 +27,10 @@ Proof snippet (synthetic replay, read-only):
 - k8s_plan_items: 4
 ```
 
+What to expect:
+- signals: drift + burst; k8s_plan_items: 4; dry-run only (no apply)
+
+
 ```bash
 ./bin/mk-procurement-pack
 ```
