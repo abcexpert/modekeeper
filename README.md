@@ -5,6 +5,24 @@
 
 ModeKeeper is a verify-first operations agent for SRE, MLOps, and FinOps teams. The public runtime is customer-safe and read-only by default; apply is licensed and hard-gated.
 
+## Start here (10 minutes)
+
+Use the buyer script [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md) and proof-pack map [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md). Canonical path: procurement pack.
+
+```bash
+./bin/mk-procurement-pack
+```
+
+```bash
+cd report/procurement_pack && sha256sum -c checksums.sha256
+```
+
+Verify-first means every deliverable is deterministic, accompanied by SHA256 manifests, and backed by reproducible transcripts.
+Validation should start from hashes and transcript evidence before any business review.
+
+PRO note: private releases are notes-only.
+Deliverables are distributed via vendor-provided stamp + transcripts + SHA256.
+
 <!-- MK_RELEASE_CHANNELS_START -->
 ## Release channels and versioning
 
