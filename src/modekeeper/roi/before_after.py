@@ -30,7 +30,7 @@ def build_roi_before_after_summary(
     *,
     baseline_p50_ms: float,
     candidate_p50_ms: float,
-    usd_per_gpu_hour: float,
+    usd_per_gpu_hour: float | None,
     gpus: int,
     hours_per_month: int,
 ) -> dict:
@@ -38,19 +38,39 @@ def build_roi_before_after_summary(
     if candidate_p50_ms > 0:
         speedup_p50 = baseline_p50_ms / candidate_p50_ms
 
-    usd_saved_per_gpu_hour = 0.0
+    savings_ratio = 0.0
     if isinstance(speedup_p50, (int, float)) and speedup_p50 > 1.0:
-        usd_saved_per_gpu_hour = usd_per_gpu_hour * max(0.0, 1.0 - (1.0 / float(speedup_p50)))
+        savings_ratio = max(0.0, 1.0 - (1.0 / float(speedup_p50)))
 
-    usd_saved_per_hour = usd_saved_per_gpu_hour * gpus
-    usd_saved_per_month = usd_saved_per_hour * hours_per_month
+    gpu_hours_saved_per_hour = float(gpus) * savings_ratio
+    gpu_hours_saved_per_month = gpu_hours_saved_per_hour * float(hours_per_month)
+
+    usd_saved_per_gpu_hour: float | None = None
+    usd_saved_per_hour: float | None = None
+    usd_saved_per_month: float | None = None
+    if usd_per_gpu_hour is not None:
+        usd_saved_per_gpu_hour = float(usd_per_gpu_hour) * savings_ratio
+        usd_saved_per_hour = gpu_hours_saved_per_hour * float(usd_per_gpu_hour)
+        usd_saved_per_month = gpu_hours_saved_per_month * float(usd_per_gpu_hour)
 
     return {
         "speedup_p50": _round6(speedup_p50) if isinstance(speedup_p50, (int, float)) else None,
-        "usd_per_gpu_hour": _round6(usd_per_gpu_hour),
+        "usd_per_gpu_hour": (
+            _round6(usd_per_gpu_hour) if isinstance(usd_per_gpu_hour, (int, float)) else None
+        ),
         "gpus": int(gpus),
         "hours_per_month": int(hours_per_month),
-        "usd_saved_per_gpu_hour": _round6(usd_saved_per_gpu_hour),
-        "usd_saved_per_hour": _round6(usd_saved_per_hour),
-        "usd_saved_per_month": _round6(usd_saved_per_month),
+        "gpu_hours_saved_per_hour": _round6(gpu_hours_saved_per_hour),
+        "gpu_hours_saved_per_month": _round6(gpu_hours_saved_per_month),
+        "usd_saved_per_gpu_hour": (
+            _round6(usd_saved_per_gpu_hour)
+            if isinstance(usd_saved_per_gpu_hour, (int, float))
+            else None
+        ),
+        "usd_saved_per_hour": (
+            _round6(usd_saved_per_hour) if isinstance(usd_saved_per_hour, (int, float)) else None
+        ),
+        "usd_saved_per_month": (
+            _round6(usd_saved_per_month) if isinstance(usd_saved_per_month, (int, float)) else None
+        ),
     }
