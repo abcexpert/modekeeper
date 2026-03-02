@@ -4,7 +4,8 @@ ModeKeeper helps Platform/SRE/FinOps teams quantify and improve Kubernetes effic
 
 **observe → evaluate/ROI → plan/verify → (optional) apply**
 
-Core principle: **verify-first** — prove and validate before recommending, and only perform changes with explicit approval.
+Core principle: **verify-first** — prove and validate before recommending, and
+only perform changes with explicit approval.
 
 ---
 
@@ -20,7 +21,8 @@ Core principle: **verify-first** — prove and validate before recommending, and
 - [ ] Clusters: names / count
 - [ ] Namespaces: list
 - [ ] Critical workloads: Deployments / StatefulSets / Jobs (list)
-- [ ] Exclusions: what must not be touched and why (regulatory, legacy, freeze windows)
+- [ ] Exclusions: what must not be touched and why (regulatory, legacy, freeze
+  windows)
 
 ### 1.3. Goals & success criteria
 Pick 1–3 primary goals:
@@ -28,7 +30,8 @@ Pick 1–3 primary goals:
 - [ ] Reduce overprovisioning (CPU/RAM): __%
 - [ ] Improve stability (OOM / throttling / latency / errors): which metrics
 - [ ] Reduce incidents/pages: what is counted
-- [ ] Standardize resource management (requests/limits/HPA/VPA): what “good” looks like
+- [ ] Standardize resource management (requests/limits/HPA/VPA): what “good”
+  looks like
 
 ---
 
@@ -39,7 +42,9 @@ Pick 1–3 primary goals:
   - view namespaces/workloads/pods/events
   - view current requests/limits/HPA/VPA (if present)
   - no mutation permissions
-- [ ] Alternative (restricted environments): you run our read-only collector in your environment and share the outputs (we provide the exact command/instructions).
+- [ ] Alternative (restricted environments): you run our read-only collector in
+  your environment and share the outputs (we provide the exact
+  command/instructions).
 
 ### 2.2. Metrics (recommended, not a hard blocker)
 Check what exists:
@@ -51,7 +56,8 @@ Check what exists:
 ### 2.3. Cost inputs (optional, improves ROI accuracy)
 - [ ] You have unit rates (GPU-hour, vCPU-hour, GB-RAM-hour, storage) — yes/no
 - [ ] You have billing export (cloud billing / internal chargeback) — yes/no
-- [ ] If exact prices are not available — OK: we use a transparent **pricing anchor** and provide a linear rescaling formula for your rates.
+- [ ] If exact prices are not available — OK: we use a transparent **pricing
+  anchor** and provide a linear rescaling formula for your rates.
 
 ---
 
@@ -76,12 +82,15 @@ Check what exists:
 ### 4.1. Evaluate / ROI package
 - [ ] Baseline usage profile (CPU/RAM/GPU/Pods/Nodes) over time
 - [ ] Hotspots and inefficiencies (overprovisioning, pressure signals, waste patterns)
-- [ ] ROI estimate with assumptions (including a pricing-anchor rescaling formula)
+- [ ] ROI estimate with assumptions (including a pricing-anchor rescaling
+  formula)
 
 ### 4.2. Plan / Verify package
 - [ ] Per-workload recommended plan (what/why/expected impact)
-- [ ] Verify checks: safety gates, invariants, compatibility, “before/after” criteria
-- [ ] Deterministic artifacts: reports + integrity checks (checksums) + reproducible transcript
+- [ ] Verify checks: safety gates, invariants, compatibility, “before/after”
+  criteria
+- [ ] Deterministic artifacts: reports + integrity checks (checksums) +
+  reproducible transcript
 
 ### 4.3. (Optional) Controlled Apply (PRO)
 Only with explicit approval and in your change windows:

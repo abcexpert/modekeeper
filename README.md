@@ -24,7 +24,7 @@ Proof snippet (synthetic replay, read-only):
 # Scenario: combo
 - trace: docs/evidence/mk060/observe_raw.jsonl
 - active_signals: burst, drift
-- k8s_plan_items: (see generated summary)
+- k8s_plan_items: 4
 ```
 
 ```bash

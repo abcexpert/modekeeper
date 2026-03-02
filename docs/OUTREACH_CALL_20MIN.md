@@ -29,7 +29,9 @@ Use this script:
 > 1) Is there measurable Kubernetes efficiency upside for your team?  
 > 2) Can we prove value safely in read-only mode first?  
 > 3) Do we have a clear pilot plan with owners and dates?  
-> ModeKeeper works verify-first: we observe current behavior, quantify ROI, produce a plan and verification evidence, and only discuss apply if you explicitly want that later.
+> ModeKeeper works verify-first: we observe current behavior, quantify ROI,
+> produce a plan and verification evidence, and only discuss apply if you
+> explicitly want that later.
 
 ## 2) Agenda (say this at minute 1)
 
@@ -46,9 +48,11 @@ Use these in order. Keep answers short and specific.
 5. Incidents: Any recent throttling, OOM, latency spikes, or paging patterns tied to capacity settings?
 6. Financial lens: Do you have internal unit costs, or should we start with a transparent pricing anchor?
 7. Constraints: What is explicitly out of scope or "do not touch"?
-8. Access model: Can you provide read-only Kubernetes access, or do you prefer running collection commands in your environment?
+8. Access model: Can you provide read-only Kubernetes access, or do you prefer
+   running collection commands in your environment?
 9. Governance: Who approves change windows if you later choose apply?
-10. Success criteria: What must be true in 2-4 weeks for you to call this pilot successful?
+10. Success criteria: What must be true in 2-4 weeks for you to call this
+    pilot successful?
 
 Reference for intake details:
 - [docs/BUYER_REQUEST_CHECKLIST.md](BUYER_REQUEST_CHECKLIST.md)
@@ -89,7 +93,9 @@ Response:
 ### "This sounds like extra process overhead."
 
 Response:
-> The process is intentionally short: observe current state, quantify likely ROI, verify a safe plan, and decide. It reduces rework from unverified tuning.
+> The process is intentionally short: observe current state, quantify likely
+> ROI, verify a safe plan, and decide. It reduces rework from unverified
+> tuning.
 
 Reference material for proof workflows:
 - [docs/PROOF_PACKS.md](PROOF_PACKS.md)
@@ -104,8 +110,10 @@ Use this structure live:
 3. Phase 1 (Days 1-5): Observe + baseline + initial ROI estimate.
 4. Phase 2 (Days 6-10): Plan/verify package with workload-level recommendations and safety checks.
 5. Phase 3 (Days 11-14): Decision checkpoint; optional controlled apply planning only if approved.
-6. Deliverables: baseline summary, ROI model + assumptions, plan/verify artifacts, decision readout.
-7. Success metrics: target efficiency or spend reduction range, plus stability guardrail metrics.
+6. Deliverables: baseline summary, ROI model + assumptions, plan/verify
+   artifacts, decision readout.
+7. Success metrics: target efficiency or spend reduction range, plus stability
+   guardrail metrics.
 
 ## 7) Next steps (minutes 18-20)
 

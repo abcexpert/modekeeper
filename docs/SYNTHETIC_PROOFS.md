@@ -1,6 +1,7 @@
 # Synthetic Proof Pack v1 (File Replay)
 
-This pack proves deterministic, buyer-safe behavior using replayed telemetry from local files.
+This pack proves deterministic, buyer-safe behavior using replayed telemetry
+from local files.
 
 ## What It Proves
 
@@ -10,7 +11,8 @@ This pack proves deterministic, buyer-safe behavior using replayed telemetry fro
 - Multi-signal behavior:
   - `drift=true` + `burst=true` in one run on combo traces.
 - Deterministic replay:
-  - Same input files produce the same class of signals and dry-run planning outputs.
+  - Same input files produce the same class of signals and dry-run planning
+    outputs.
 - Read-only operation:
   - Observe + closed-loop dry-run only; no apply/mutate path is used.
 
@@ -24,7 +26,8 @@ Output root:
 
 - `out/synthetic_proofs/<UTC_TS>Z/`
 
-Each scenario directory contains transcript, plan/observe artifacts, summaries, metrics, sparklines, and SHA256 checksums.
+Each scenario directory contains transcript, plan/observe artifacts,
+summaries, metrics, sparklines, and SHA256 checksums.
 
 ## Scenarios And Expected Outcomes
 
