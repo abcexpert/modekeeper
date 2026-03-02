@@ -17,6 +17,7 @@ Navigation hub for current project documentation.
 - [Release script](../scripts/release_public.sh)
 - [Procurement pack](PROCUREMENT_PACK.md)
 - [Buyer proof pack](BUYER_PROOF_PACK.md)
+- [Proof packs overview](PROOF_PACKS.md)
 
 ## Security and compliance
 - [Security posture](SECURITY_POSTURE.md)
