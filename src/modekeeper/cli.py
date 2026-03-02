@@ -3907,7 +3907,11 @@ def cmd_roi_before_after(args: argparse.Namespace) -> int:
     summary = build_roi_before_after_summary(
         baseline_p50_ms=float(baseline["p50_ms"]),
         candidate_p50_ms=float(candidate["p50_ms"]),
-        usd_per_gpu_hour=float(args.usd_per_gpu_hour),
+        usd_per_gpu_hour=(
+            float(args.usd_per_gpu_hour)
+            if isinstance(args.usd_per_gpu_hour, (int, float))
+            else None
+        ),
         gpus=int(args.gpus),
         hours_per_month=int(args.hours_per_month),
     )
@@ -3923,6 +3927,8 @@ def cmd_roi_before_after(args: argparse.Namespace) -> int:
         notes.append("baseline_samples_empty")
     if candidate_count == 0:
         notes.append("candidate_samples_empty")
+    if args.usd_per_gpu_hour is None:
+        notes.append("usd_per_gpu_hour_missing")
     if baseline_count < 2:
         errors.append(f"baseline requires at least 2 samples (got {baseline_count})")
     if candidate_count < 2:
@@ -5408,7 +5414,7 @@ def build_parser() -> argparse.ArgumentParser:
     roi_mk074.set_defaults(func=cmd_roi_mk074)
     roi_before_after = roi_sub.add_parser(
         "before-after",
-        help="Compare baseline/candidate telemetry and estimate USD savings",
+        help="Compare baseline/candidate telemetry and estimate savings",
     )
     roi_before_after.add_argument(
         "--baseline-path",
@@ -5423,8 +5429,8 @@ def build_parser() -> argparse.ArgumentParser:
     roi_before_after.add_argument(
         "--usd-per-gpu-hour",
         type=float,
-        default=2.0,
-        help="USD cost per GPU-hour (default: 2.0)",
+        default=None,
+        help="USD cost per GPU-hour (optional)",
     )
     roi_before_after.add_argument(
         "--gpus",
