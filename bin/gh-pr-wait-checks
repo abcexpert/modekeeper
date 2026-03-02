@@ -32,8 +32,8 @@ while true; do
   echo "$out"
   echo "----"
 
-  # pending lines start with "*"
-  if echo "$out" | grep -qE '^\*'; then
+  # pending lines: "<check> pending|in progress|queued"
+  if echo "$out" | grep -qiE '^[^[:space:]]+[[:space:]]+(pending\b|in progress\b|queued\b)'; then
     sleep 5
     continue
   fi
