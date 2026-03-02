@@ -2,6 +2,8 @@
 
 This page summarizes the public proof-pack workflows in one place.
 
+Start here: [BUYER_10MIN.md](BUYER_10MIN.md)
+
 ## Public Scenarios
 
 ### 1) Buyer pack
@@ -99,4 +101,3 @@ Private/proprietary delivery is handled outside public repo artifacts:
 - GitHub Releases are notes-only (no binary assets attached).
 - Deliverables are distributed via vault stamps on authorized hosts.
 - Verification is done from delivery transcripts plus SHA256 checks.
-
