@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+die(){ echo "ERROR: $*" >&2; exit 2; }
+
+repo="abcexpert/modekeeper"
+pr=""
+
+usage(){
+  cat <<'USAGE'
+usage: bin/gh-pr-wait-checks PR_NUMBER [--repo owner/repo]
+
+Wait until GitHub PR checks finish. Succeeds when there are no pending checks and no failures.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo) repo="${2:-}"; [[ -n "$repo" ]] || die "--repo requires value"; shift 2;;
+    -h|--help) usage; exit 0;;
+    *)
+      if [[ -z "${pr}" ]]; then pr="$1"; shift; else die "unexpected arg: $1"; fi
+      ;;
+  esac
+done
+
+[[ -n "$pr" ]] || die "PR_NUMBER is required"
+gh auth status -h github.com >/dev/null 2>&1 || die "gh is not authenticated; run: gh auth login"
+
+while true; do
+  out="$(gh pr checks "$pr" -R "$repo" 2>&1 || true)"
+  echo "$out"
+  echo "----"
+
+  # pending lines start with "*"
+  if echo "$out" | grep -qE '^\*'; then
+    sleep 5
+    continue
+  fi
+
+  # fail-ish keywords
+  if echo "$out" | grep -qiE '\bfail\b|\berror\b|cancel|timed out'; then
+    die "checks not successful"
+  fi
+
+  # no pending + has pass/skipped => done
+  if echo "$out" | grep -qiE '\bpass\b|\bskipped\b'; then
+    echo "OK: checks completed"
+    exit 0
+  fi
+
+  sleep 5
+done
