@@ -7,7 +7,11 @@ ModeKeeper is a verify-first operations agent for SRE, MLOps, and FinOps teams. 
 
 ## Start here (10 minutes)
 
-Use the buyer script [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md) and proof-pack map [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md). Canonical path: procurement pack.
+Use these buyer materials. Canonical path: procurement pack.
+
+- Buyer script: [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md)
+- Proof-pack map: [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md)
+- Buyer request checklist (pilot intake): [`docs/BUYER_REQUEST_CHECKLIST.md`](docs/BUYER_REQUEST_CHECKLIST.md)
 
 ```bash
 ./bin/mk-procurement-pack

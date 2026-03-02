@@ -24,6 +24,7 @@ cd report/procurement_pack && sha256sum -c checksums.sha256
 
 Внутри `report/procurement_pack` откройте в таком порядке:
 
+- [Buyer request checklist (pilot intake)](BUYER_REQUEST_CHECKLIST.md)
 - `docs/SECURITY_POSTURE.md` (модель безопасности и границы)
 - `docs/WORKFLOW.md` (end-to-end поток и gate'ы)
 - `docs/COMPLIANCE_MATRIX.md` (маппинг контролей)
