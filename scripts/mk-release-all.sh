@@ -215,15 +215,47 @@ PY
 validate_install_and_versions() {
   local package_name="$1"
   local version="$2"
+  local wheel_url
 
   TMPDIR_VENV="$(mktemp -d)"
 
   log "Validation: creating fresh venv at ${TMPDIR_VENV}"
   python3 -m venv "${TMPDIR_VENV}/venv"
 
-  log "Validation: installing ${package_name}==${version} with --no-cache-dir"
-  "${TMPDIR_VENV}/venv/bin/pip" -q install -U pip
-  "${TMPDIR_VENV}/venv/bin/pip" -q install --no-cache-dir "${package_name}==${version}"
+  log "Validation: resolving wheel URL from PyPI JSON for ${package_name}==${version}"
+  wheel_url="$(
+    python3 - "$package_name" "$version" <<'PY'
+import json
+import sys
+import urllib.request as req
+from urllib.error import HTTPError, URLError
+
+name = sys.argv[1]
+ver = sys.argv[2]
+url = f"https://pypi.org/pypi/{name}/{ver}/json"
+
+try:
+    with req.urlopen(url, timeout=20) as r:
+        payload = json.load(r)
+except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+    raise SystemExit(f"failed to fetch/parse PyPI JSON for {name}=={ver}: {exc}")
+
+for item in payload.get("urls", []):
+    filename = item.get("filename", "")
+    wheel_url = item.get("url", "")
+    if filename.endswith(".whl") and wheel_url:
+        print(wheel_url)
+        raise SystemExit(0)
+
+raise SystemExit(f"wheel URL not found in PyPI JSON for {name}=={ver}")
+PY
+  )" || die "cannot resolve wheel URL from PyPI JSON for ${package_name}==${version}"
+
+  [[ -n "${wheel_url}" ]] || die "wheel URL is empty for ${package_name}==${version}"
+
+  log "Validation: installing wheel via URL with --no-cache-dir"
+  PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 "${TMPDIR_VENV}/venv/bin/pip" -q install -U pip
+  PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 "${TMPDIR_VENV}/venv/bin/pip" -q install --no-cache-dir "${wheel_url}"
 
   log "Validation: checking module __version__ equals importlib.metadata version"
   "${TMPDIR_VENV}/venv/bin/python" - "$package_name" <<'PY'
