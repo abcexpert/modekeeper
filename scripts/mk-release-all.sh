@@ -45,8 +45,7 @@ PRIV_REMOTE="${PRIV_REMOTE:-github}"
 PUB_REPO="${PUB_REPO:-abcexpert/modekeeper}"
 PRIV_REPO="${PRIV_REPO:-abcexpert/modekeeper-private}"
 PYPI_NAME="${PYPI_NAME:-modekeeper}"
-
-[[ -d "${PRIV_DIR}" ]] || die "private repo path does not exist: ${PRIV_DIR}"
+MK_RELEASE_INCLUDE_PRIVATE="${MK_RELEASE_INCLUDE_PRIVATE:-0}"
 
 gh auth status -h github.com >/dev/null 2>&1 || die "gh is not authenticated; run: gh auth login"
 
@@ -311,11 +310,17 @@ create_tag_and_release "$PUB_DIR" "$PUB_REMOTE" "$PUB_REPO" "$TAG" "release: ${T
 wait_for_pypi_wheel "$PYPI_NAME" "$PUB_VERSION"
 validate_install_and_versions "$PYPI_NAME" "$PUB_VERSION"
 
-log "PRIVATE: ${PRIV_REPO}"
-ensure_repo_ready "$PRIV_DIR" "$PRIV_REMOTE" "private"
-sync_private_version_if_needed "$PRIV_DIR" "$PRIV_REMOTE" "$PUB_VERSION"
+if [[ "${MK_RELEASE_INCLUDE_PRIVATE}" == "1" ]]; then
+  [[ -d "${PRIV_DIR}" ]] || die "private repo path does not exist: ${PRIV_DIR}"
 
-refuse_if_tag_exists "$PRIV_DIR" "$PRIV_REMOTE" "$TAG" "private"
-create_tag_and_release "$PRIV_DIR" "$PRIV_REMOTE" "$PRIV_REPO" "$TAG" "release: ${TAG} (sync with public)"
+  log "PRIVATE: ${PRIV_REPO}"
+  ensure_repo_ready "$PRIV_DIR" "$PRIV_REMOTE" "private"
+  sync_private_version_if_needed "$PRIV_DIR" "$PRIV_REMOTE" "$PUB_VERSION"
+
+  refuse_if_tag_exists "$PRIV_DIR" "$PRIV_REMOTE" "$TAG" "private"
+  create_tag_and_release "$PRIV_DIR" "$PRIV_REMOTE" "$PRIV_REPO" "$TAG" "release: ${TAG} (sync with public)"
+else
+  echo "INFO: private release is notes-only and is run separately in ~/code/modekeeper-private"
+fi
 
 log "DONE: release flow completed for ${TAG}"
