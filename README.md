@@ -1,7 +1,7 @@
 # ModeKeeper
 
 [![CI](https://github.com/abcexpert/modekeeper/actions/workflows/ci.yml/badge.svg)](https://github.com/abcexpert/modekeeper/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/modekeeper.svg)](https://pypi.org/project/modekeeper/)
+[![PyPI](https://img.shields.io/pypi/v/modekeeper.svg?cacheSeconds=900)](https://pypi.org/project/modekeeper/)
 
 ModeKeeper is a verify-first operations agent for SRE, MLOps, and FinOps teams. The public runtime is customer-safe and read-only by default; apply is licensed and hard-gated.
 
@@ -12,6 +12,7 @@ Use these buyer materials. Canonical path: procurement pack.
 - Buyer script: [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md)
 - Proof-pack map: [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md)
 - Buyer request checklist (pilot intake): [`docs/BUYER_REQUEST_CHECKLIST.md`](docs/BUYER_REQUEST_CHECKLIST.md)
+- 20-min discovery call script: [`docs/OUTREACH_CALL_20MIN.md`](docs/OUTREACH_CALL_20MIN.md)
 
 ```bash
 ./bin/mk-procurement-pack
