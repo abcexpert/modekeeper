@@ -1,7 +1,9 @@
-# ModeKeeper — Snapshot для продолжения (K8s plan-only + verify + product docs)
+# ModeKeeper — Snapshot для продолжения (customer-managed runner + verified export)
 
 > Цель: один переносимый документ в репозитории, чтобы продолжать работу без контекста чатов.
+> Направление: **customer-managed execution** (install/run/export/support выполняет клиентская сторона).
 > Дефолт продукта: **plan-only + verify** (ничего не меняет). Платный режим: apply только под лицензией и после verify-ok.
+> Роль вендора: только лицензии и support, без участия в runtime-операциях клиента.
 
 ## Links
 - PyPI: `modekeeper`
@@ -11,6 +13,8 @@
 ## 0) Контекст и дефолт-режим
 - **Free:** observe + closed-loop dry-run + k8s render/verify (**ничего не меняет**).
 - **Paid:** one-shot `closed-loop run --apply` (рекомендуется), gated: kill-switch + license + **verify-ok**.
+- **Runner model:** customer-managed k8s runner (self-serve install/upgrade/rollback/uninstall).
+- **Export model:** verified handoff/export (`tar.gz` + `sha256` + verification transcript/script).
 
 ## 0.1) Canonical kind/e2e bootstrap
 - Step 0: `./scripts/kind-bootstrap.sh`
