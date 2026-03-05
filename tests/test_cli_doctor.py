@@ -1,11 +1,12 @@
 import os
+import json
 import subprocess
 from pathlib import Path
 
 
-def _run(mk: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+def _run(mk: Path, env: dict[str, str], out_dir: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [str(mk), "doctor"],
+        [str(mk), "doctor", "--out", str(out_dir)],
         check=False,
         capture_output=True,
         text=True,
@@ -26,9 +27,16 @@ def test_doctor_pass_with_fake_kubectl_and_kubeconfig(tmp_path: Path, mk_path: P
         "KUBECTL": str(kubectl),
         "KUBECONFIG": str(kubeconfig),
     }
-    cp = _run(mk_path, env)
+    out_dir = tmp_path / "out"
+    cp = _run(mk_path, env, out_dir)
     assert cp.returncode == 0
     assert "Doctor result: PASS" in cp.stdout
+    assert (out_dir / "doctor_latest.json").exists()
+    assert (out_dir / "summary.md").exists()
+    ts_reports = list(out_dir.glob("doctor_*.json"))
+    assert len(ts_reports) == 2
+    latest_payload = json.loads((out_dir / "doctor_latest.json").read_text(encoding="utf-8"))
+    assert latest_payload["ok"] is True
 
 
 def test_doctor_fails_with_missing_kubeconfig(tmp_path: Path, mk_path: Path) -> None:
@@ -42,6 +50,13 @@ def test_doctor_fails_with_missing_kubeconfig(tmp_path: Path, mk_path: Path) -> 
         "KUBECTL": str(kubectl),
         "KUBECONFIG": str(missing_kubeconfig),
     }
-    cp = _run(mk_path, env)
+    out_dir = tmp_path / "out"
+    cp = _run(mk_path, env, out_dir)
     assert cp.returncode == 2
     assert "Doctor result: FAIL" in cp.stdout
+    assert (out_dir / "doctor_latest.json").exists()
+    assert (out_dir / "summary.md").exists()
+    ts_reports = list(out_dir.glob("doctor_*.json"))
+    assert len(ts_reports) == 2
+    latest_payload = json.loads((out_dir / "doctor_latest.json").read_text(encoding="utf-8"))
+    assert latest_payload["ok"] is False
