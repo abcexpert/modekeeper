@@ -1,5 +1,111 @@
 # Tickets
 
+- EPIC: Customer-managed operations and support handoff (MK-130..MK-135)
+  Goal:
+    - Make ModeKeeper fully customer-managed for install/run/export/support, with vendor role limited to licensing and support.
+
+- ID: MK-130
+  Title: mk doctor (env/RBAC/access/version checks + actionable output)
+  Status: TODO
+  Acceptance criteria:
+    - `mk doctor` validates local/runtime prerequisites, access/RBAC visibility, and version compatibility in one command.
+    - Output is actionable: each failed/warned check includes clear remediation hints.
+    - Command remains customer-safe (read-only), with deterministic machine-readable artifact and concise terminal summary.
+  Definition of Done:
+    - CLI command and docs updated with exact check set and expected output contract.
+    - Focused tests cover pass/fail/warn paths and actionable messaging.
+    - No cluster mutations are introduced by doctor checks.
+  Evidence stub:
+    - tests:
+    - docs:
+    - artifacts:
+    - commit:
+
+- ID: MK-131
+  Title: mk support-bundle (sanitized support pack + redaction rules)
+  Status: TODO
+  Acceptance criteria:
+    - `mk support-bundle` produces a reproducible support pack containing only approved diagnostics/artifacts.
+    - Sensitive values are redacted according to explicit redaction rules with deterministic behavior.
+    - Bundle includes a manifest documenting included files, redactions, and generation metadata.
+  Definition of Done:
+    - Redaction policy is documented and enforced in command output.
+    - Tests cover sanitizer/redaction edge cases and manifest integrity.
+    - CLI reference and support workflow docs include usage and safe-sharing guidance.
+  Evidence stub:
+    - tests:
+    - docs:
+    - artifacts:
+    - commit:
+
+- ID: MK-132
+  Title: mk export handoff-pack (tar.gz + sha256 + verify script/transcript)
+  Status: TODO
+  Acceptance criteria:
+    - `mk export handoff-pack` emits `tar.gz`, `sha256`, and a verification script/transcript customers can run offline.
+    - Verification flow clearly returns pass/fail and records transcript evidence.
+    - Export is deterministic for identical inputs and does not require vendor infrastructure.
+  Definition of Done:
+    - Export command contract and artifact layout are documented.
+    - Tests validate checksum correctness, verify script behavior, and transcript generation.
+    - Quickstart/handoff docs include one canonical export+verify flow.
+  Evidence stub:
+    - tests:
+    - docs:
+    - artifacts:
+    - commit:
+
+- ID: MK-133
+  Title: mk install k8s-runner (generate namespace/SA/RBAC/job manifests; license secret optional)
+  Status: TODO
+  Acceptance criteria:
+    - `mk install k8s-runner` generates install manifests for namespace, service account, RBAC, and runner job.
+    - License secret wiring is optional and explicitly documented.
+    - Generated manifests are customer-owned, reviewable, and apply-ready without vendor changes.
+  Definition of Done:
+    - Command supports deterministic manifest output and clear flags for namespace/name/customization.
+    - Tests cover manifest generation and optional license-secret scenarios.
+    - Install/runbook docs include generated-manifest apply and rollback guidance.
+  Evidence stub:
+    - tests:
+    - docs:
+    - artifacts:
+    - commit:
+
+- ID: MK-134
+  Title: Self-serve runbook: install/upgrade/rollback/uninstall + air-gapped notes
+  Status: TODO
+  Acceptance criteria:
+    - A single customer-facing runbook covers install, upgrade, rollback, uninstall, and operational checks.
+    - Air-gapped guidance includes artifact transport, integrity verification, and offline execution constraints.
+    - Runbook is executable end-to-end without vendor-operated components.
+  Definition of Done:
+    - Runbook added/updated under docs with copy/paste-validated commands.
+    - Linked from main docs entry points used by customers.
+    - Dry-run validation evidence captured for each lifecycle operation.
+  Evidence stub:
+    - tests:
+    - docs:
+    - artifacts:
+    - commit:
+
+- ID: MK-135
+  Title: Docs alignment: update HANDOFF/RELEASING/SNAPSHOT wording for customer-managed execution
+  Status: TODO
+  Acceptance criteria:
+    - `docs/HANDOFF.md`, `docs/RELEASING.md`, and `docs/SNAPSHOT.md` consistently describe customer-managed install/run/export.
+    - Vendor role is clearly scoped to license issuance and support response, not runtime operations.
+    - Terminology is consistent across docs (runner, handoff pack, support bundle, verified export).
+  Definition of Done:
+    - All three docs updated with no contradictory instructions.
+    - Cross-links between handoff/releasing/snapshot are verified.
+    - Reviewer checklist confirms wording alignment for customer-managed execution.
+  Evidence stub:
+    - tests:
+    - docs:
+    - artifacts:
+    - commit:
+
 
 - ID: MK-112
   Title: PyPI landing README + enterprise quickstart (install, eval, observe, closed-loop gating)
