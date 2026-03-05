@@ -2509,8 +2509,48 @@ def cmd_roi(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_doctor(_args: argparse.Namespace) -> int:
+def cmd_doctor(args: argparse.Namespace) -> int:
+    out_value = getattr(args, "out", None)
+    if not isinstance(out_value, str) or not out_value.strip():
+        out_value = str(Path("report") / f"doctor_{_utc_now().strftime('%Y%m%dT%H%M%SZ')}")
+    out_dir = _ensure_out_dir(out_value)
+
+    started_at = _utc_now()
     checks, ok = _collect_doctor_checks()
+    finished_at = _utc_now()
+
+    latest_path = out_dir / "doctor_latest.json"
+    ts_suffix = finished_at.strftime("%Y%m%dT%H%M%SZ")
+    ts_path = out_dir / f"doctor_{ts_suffix}.json"
+    summary_path = out_dir / "summary.md"
+
+    doctor_report = {
+        "schema_version": "doctor.v1",
+        "started_at": _format_utc(started_at),
+        "finished_at": _format_utc(finished_at),
+        "duration_s": int((finished_at - started_at).total_seconds()),
+        "ok": ok,
+        "checks": checks,
+        "key_artifacts": [str(latest_path), str(ts_path), str(summary_path)],
+    }
+    _write_json_report(latest_path, doctor_report)
+    _write_json_report(ts_path, doctor_report)
+
+    summary_lines = [
+        "# Doctor Summary",
+        f"ok: {_format_bool_or_na(ok)}",
+        "checks:",
+    ]
+    for check in checks:
+        label = str(check.get("label") or "")
+        passed = bool(check.get("ok"))
+        summary_lines.append(f"- {'PASS' if passed else 'FAIL'} {label}")
+        if not passed:
+            hint = str(check.get("hint") or "")
+            if hint:
+                summary_lines.append(f"  hint: {hint}")
+    summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+
     for check in checks:
         label = str(check.get("label") or "")
         hint = str(check.get("hint") or "")
@@ -5072,6 +5112,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     doctor = sub.add_parser("doctor", help="Check local onboarding prerequisites")
+    doctor.add_argument(
+        "--out",
+        help="Output directory (default: ./report/doctor_<UTC ts>/, ts=YYYYMMDDTHHMMSSZ)",
+    )
     doctor.set_defaults(func=cmd_doctor)
 
     quickstart = sub.add_parser(
