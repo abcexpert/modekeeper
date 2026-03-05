@@ -5105,6 +5105,164 @@ def cmd_k8s_apply(args: argparse.Namespace) -> int:
     return _require_pro("k8s apply")
 
 
+def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
+    out_value = getattr(args, "out", None)
+    if not isinstance(out_value, str) or not out_value.strip():
+        out_value = str(Path("report") / f"install_k8s_runner_{_utc_now().strftime('%Y%m%dT%H%M%SZ')}")
+    out_dir = _ensure_out_dir(out_value)
+
+    namespace = str(args.namespace)
+    serviceaccount = str(args.serviceaccount)
+    clusterrole = str(args.clusterrole)
+    job_name = str(args.job_name)
+    image = str(args.image)
+
+    namespace_yaml = (
+        "apiVersion: v1\n"
+        "kind: Namespace\n"
+        "metadata:\n"
+        f"  name: {namespace}\n"
+    )
+    serviceaccount_yaml = (
+        "apiVersion: v1\n"
+        "kind: ServiceAccount\n"
+        "metadata:\n"
+        f"  name: {serviceaccount}\n"
+        f"  namespace: {namespace}\n"
+    )
+    rbac_yaml = (
+        "apiVersion: rbac.authorization.k8s.io/v1\n"
+        "kind: ClusterRole\n"
+        "metadata:\n"
+        f"  name: {clusterrole}\n"
+        "rules:\n"
+        "- apiGroups: [\"\"]\n"
+        "  resources:\n"
+        "  - namespaces\n"
+        "  - nodes\n"
+        "  - pods\n"
+        "  - services\n"
+        "  - endpoints\n"
+        "  - events\n"
+        "  - resourcequotas\n"
+        "  - limitranges\n"
+        "  - persistentvolumeclaims\n"
+        "  - persistentvolumes\n"
+        "  verbs: [\"get\", \"list\", \"watch\"]\n"
+        "- apiGroups: [\"\"]\n"
+        "  resources: [\"pods/log\"]\n"
+        "  verbs: [\"get\"]\n"
+        "- apiGroups: [\"apps\"]\n"
+        "  resources: [\"deployments\", \"replicasets\", \"statefulsets\", \"daemonsets\"]\n"
+        "  verbs: [\"get\", \"list\", \"watch\"]\n"
+        "- apiGroups: [\"batch\"]\n"
+        "  resources: [\"jobs\", \"cronjobs\"]\n"
+        "  verbs: [\"get\", \"list\", \"watch\"]\n"
+        "- apiGroups: [\"autoscaling\"]\n"
+        "  resources: [\"horizontalpodautoscalers\"]\n"
+        "  verbs: [\"get\", \"list\", \"watch\"]\n"
+        "- apiGroups: [\"networking.k8s.io\"]\n"
+        "  resources: [\"ingresses\", \"networkpolicies\"]\n"
+        "  verbs: [\"get\", \"list\", \"watch\"]\n"
+        "- apiGroups: [\"storage.k8s.io\"]\n"
+        "  resources: [\"storageclasses\", \"volumeattachments\"]\n"
+        "  verbs: [\"get\", \"list\", \"watch\"]\n"
+        "---\n"
+        "apiVersion: rbac.authorization.k8s.io/v1\n"
+        "kind: ClusterRoleBinding\n"
+        "metadata:\n"
+        f"  name: {clusterrole}-binding\n"
+        "roleRef:\n"
+        "  apiGroup: rbac.authorization.k8s.io\n"
+        "  kind: ClusterRole\n"
+        f"  name: {clusterrole}\n"
+        "subjects:\n"
+        "- kind: ServiceAccount\n"
+        f"  name: {serviceaccount}\n"
+        f"  namespace: {namespace}\n"
+    )
+    job_yaml = (
+        "apiVersion: batch/v1\n"
+        "kind: Job\n"
+        "metadata:\n"
+        f"  name: {job_name}\n"
+        f"  namespace: {namespace}\n"
+        "spec:\n"
+        "  ttlSecondsAfterFinished: 86400\n"
+        "  template:\n"
+        "    spec:\n"
+        f"      serviceAccountName: {serviceaccount}\n"
+        "      restartPolicy: Never\n"
+        "      volumes:\n"
+        "      - name: out\n"
+        "        emptyDir: {}\n"
+        "      containers:\n"
+        "      - name: runner\n"
+        f"        image: {image}\n"
+        "        command: [\"mk\", \"doctor\", \"--out\", \"/out/doctor\"]\n"
+        "        volumeMounts:\n"
+        "        - name: out\n"
+        "          mountPath: /out\n"
+    )
+    readme = (
+        "# ModeKeeper k8s Runner Install Bundle\n\n"
+        "This bundle installs a read-only Kubernetes runner job using customer-owned manifests.\n\n"
+        "## Apply\n\n"
+        "Use the provided script:\n\n"
+        "```bash\n"
+        "./apply.sh\n"
+        "```\n\n"
+        "## RBAC Sanity Checks\n\n"
+        "Expected read access checks (yes):\n\n"
+        "```bash\n"
+        f"kubectl auth can-i get pods --as=system:serviceaccount:{namespace}:{serviceaccount}\n"
+        f"kubectl auth can-i list deployments.apps --as=system:serviceaccount:{namespace}:{serviceaccount}\n"
+        "```\n\n"
+        "Expected mutation checks (no):\n\n"
+        "```bash\n"
+        f"kubectl auth can-i create pods --as=system:serviceaccount:{namespace}:{serviceaccount}\n"
+        f"kubectl auth can-i patch deployments.apps --as=system:serviceaccount:{namespace}:{serviceaccount}\n"
+        f"kubectl auth can-i delete jobs.batch --as=system:serviceaccount:{namespace}:{serviceaccount}\n"
+        "```\n\n"
+        "## Collect Artifacts\n\n"
+        "Get logs and copy `/out` artifacts from the runner pod:\n\n"
+        "```bash\n"
+        f"kubectl -n {namespace} logs job/{job_name}\n"
+        f"POD_NAME=$(kubectl -n {namespace} get pods -l job-name={job_name} -o jsonpath='{{.items[0].metadata.name}}')\n"
+        f"kubectl -n {namespace} cp \"$POD_NAME\":/out ./out\n"
+        "```\n"
+    )
+    apply_sh = (
+        "#!/usr/bin/env bash\n"
+        "set -Eeuo pipefail\n"
+        "kubectl apply -f 00_namespace.yaml\n"
+        "kubectl apply -f 10_serviceaccount.yaml\n"
+        "kubectl apply -f 20_rbac.yaml\n"
+        "kubectl apply -f 30_job.yaml\n"
+    )
+    rollback_sh = (
+        "#!/usr/bin/env bash\n"
+        "set -Eeuo pipefail\n"
+        "kubectl delete -f 30_job.yaml\n"
+        "kubectl delete -f 20_rbac.yaml\n"
+        "kubectl delete -f 10_serviceaccount.yaml\n"
+        "kubectl delete -f 00_namespace.yaml\n"
+    )
+
+    (out_dir / "00_namespace.yaml").write_text(namespace_yaml, encoding="utf-8")
+    (out_dir / "10_serviceaccount.yaml").write_text(serviceaccount_yaml, encoding="utf-8")
+    (out_dir / "20_rbac.yaml").write_text(rbac_yaml, encoding="utf-8")
+    (out_dir / "30_job.yaml").write_text(job_yaml, encoding="utf-8")
+    (out_dir / "README.md").write_text(readme, encoding="utf-8")
+    apply_path = out_dir / "apply.sh"
+    apply_path.write_text(apply_sh, encoding="utf-8")
+    apply_path.chmod(0o755)
+    rollback_path = out_dir / "rollback.sh"
+    rollback_path.write_text(rollback_sh, encoding="utf-8")
+    rollback_path.chmod(0o755)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mk")
     parser.add_argument("--version", action="version", version=f"modekeeper {MK_VERSION}")
@@ -5734,6 +5892,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="License path override for apply gate lookup",
     )
     k8s_apply.set_defaults(func=cmd_k8s_apply)
+
+    install = sub.add_parser("install", help="Install manifest bundle generators")
+    install_sub = install.add_subparsers(dest="subcommand", required=True)
+    install_k8s_runner = install_sub.add_parser(
+        "k8s-runner",
+        help="Generate customer-owned read-only runner install manifests",
+    )
+    install_k8s_runner.add_argument(
+        "--out",
+        help="Output directory (default: ./report/install_k8s_runner_<UTC ts>/, ts=YYYYMMDDTHHMMSSZ)",
+    )
+    install_k8s_runner.add_argument("--namespace", default="modekeeper-system", help="Namespace")
+    install_k8s_runner.add_argument(
+        "--serviceaccount",
+        default="modekeeper-readonly",
+        help="ServiceAccount name",
+    )
+    install_k8s_runner.add_argument(
+        "--clusterrole",
+        default="modekeeper-readonly",
+        help="ClusterRole name",
+    )
+    install_k8s_runner.add_argument("--job-name", default="modekeeper-runner", help="Job name")
+    install_k8s_runner.add_argument(
+        "--image",
+        default="modekeeper-runner:latest",
+        help="Runner image reference",
+    )
+    install_k8s_runner.set_defaults(func=cmd_install_k8s_runner)
 
     return parser
 
