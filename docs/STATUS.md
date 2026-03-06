@@ -10,8 +10,8 @@ Source of detailed work tracking: `docs/TICKETS.md`.
 - Apply/implementation remains separate and gated, outside the public assessment path.
 
 ## Totals By Status
-- TOTAL: 8 public ticket items (`MK-130`..`MK-137`)
-- DONE: 3
+- TOTAL: 9 public ticket items (`MK-130`..`MK-138`)
+- DONE: 4
 - TODO: 5
 
 ## Public highlights
@@ -19,9 +19,10 @@ Source of detailed work tracking: `docs/TICKETS.md`.
 - Enterprise-facing packaging and handoff artifacts are in place for procurement/security/platform review.
 - Public docs and CLI contracts keep apply semantics explicitly gated and non-default.
 - Distribution and boundary docs preserve a strict public/private separation for buyer-safe review.
+- Online Boutique external proof summary documents non-zero read-only signal/proposal outcomes for two forced scenarios without implying universal detection.
 
 ## Remaining Work
-- Open public items remain in `docs/TICKETS.md` (for example: `MK-130`, `MK-131`, `MK-132`, `MK-136`, `MK-137`).
+- Open public items remain in `docs/TICKETS.md` (`MK-130`, `MK-131`, `MK-132`, `MK-136`, `MK-137`).
 
 ## Next public-facing updates
 1. Keep buyer/procurement proof links current and reproducible.

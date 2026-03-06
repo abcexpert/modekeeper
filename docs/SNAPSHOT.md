@@ -23,7 +23,7 @@ Core positioning pillars:
 - Canonical public workflow remains strict read-only assessment: `observe -> plan -> verify -> export`.
 - Apply/mutate is a separate licensed and gated path and is not baseline public evaluation.
 - Runtime execution boundary remains customer-managed in customer environments.
-- Next technical strengthening area is broader observable pattern detection with explicit insufficient-evidence reporting.
+- Online Boutique external proof documents non-zero read-only signal/proposal outcomes for forced oversized-request and burst-traffic scenarios, with local customer-managed artifacts.
 
 ## Canonical public workflow (high-level)
 
