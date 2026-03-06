@@ -57,7 +57,7 @@
 
 - ID: MK-133
   Title: mk install k8s-runner (generate namespace/SA/RBAC/job manifests; license secret optional)
-  Status: TODO
+  Status: DONE
   Acceptance criteria:
     - `mk install k8s-runner` generates install manifests for namespace, service account, RBAC, and runner job.
     - License secret wiring is optional and explicitly documented.
@@ -66,11 +66,23 @@
     - Command supports deterministic manifest output and clear flags for namespace/name/customization.
     - Tests cover manifest generation and optional license-secret scenarios.
     - Install/runbook docs include generated-manifest apply and rollback guidance.
-  Evidence stub:
-    - tests:
-    - docs:
-    - artifacts:
-    - commit:
+  Evidence:
+    - PR: #63 (merged)
+    - commit: `dd87698` (main)
+    - generated runner job command:
+      - `mk quickstart --out /out/quickstart; echo MODEKEEPER_DONE; sleep 900`
+    - abc2 e2e:
+      - runner pod started in kind cluster
+      - `MODEKEEPER_DONE` observed in runner logs
+      - `kubectl cp` of `/out/quickstart` succeeded
+      - quickstart outcome contains `preflight_latest.json`, `eval_latest.json`, `watch_latest.json`, `roi_latest.json`
+      - `mk export handoff-pack` succeeded
+      - `HANDOFF_VERIFY.sh` returned `OK`
+    - observation:
+      - quickstart outcome reported `top_blocker=rbac_denied`, but handoff-pack flow still succeeded
+    - follow-up note:
+      - local kind e2e currently requires prebuilt/loaded `modekeeper-runner:latest`
+      - `imagePullPolicy: Never` was required for local kind image flow
 
 - ID: MK-134
   Title: Self-serve runbook: install/upgrade/rollback/uninstall + air-gapped notes
