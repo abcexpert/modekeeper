@@ -13,16 +13,17 @@ OBSERVE_DURATION="${4:-60s}"
 
 mkdir -p "$OUT_DIR"
 
-mk eval k8s \
+mk observe \
+  --source k8s-logs \
   --k8s-namespace "$NAMESPACE" \
   --k8s-deployment "$DEPLOYMENT" \
-  --observe-duration "$OBSERVE_DURATION" \
-  --out "$OUT_DIR/eval_k8s"
+  --duration "$OBSERVE_DURATION" \
+  --out "$OUT_DIR/observe"
 
 mk closed-loop run \
   --scenario drift \
   --dry-run \
-  --observe-source k8s \
+  --observe-source k8s-logs \
   --k8s-namespace "$NAMESPACE" \
   --k8s-deployment "$DEPLOYMENT" \
   --observe-duration "$OBSERVE_DURATION" \
@@ -31,7 +32,7 @@ mk closed-loop run \
 mk closed-loop watch \
   --scenario drift \
   --dry-run \
-  --observe-source k8s \
+  --observe-source k8s-logs \
   --k8s-namespace "$NAMESPACE" \
   --k8s-deployment "$DEPLOYMENT" \
   --observe-duration "$OBSERVE_DURATION" \

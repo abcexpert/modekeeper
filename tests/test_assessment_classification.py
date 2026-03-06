@@ -2,6 +2,8 @@ import json
 import subprocess
 from pathlib import Path
 
+from modekeeper.cli import _build_assessment_fields
+
 
 def _run(mk: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run([str(mk), *args], text=True, capture_output=True, check=False)
@@ -150,3 +152,33 @@ def test_handoff_pack_includes_assessment_fields(tmp_path: Path, mk_path: Path) 
     summary = (out_dir / "handoff_summary.md").read_text(encoding="utf-8")
     assert "assessment_result_class: signal_found" in summary
     assert "assessment.signal_count: 1" in summary
+
+
+def test_build_assessment_fields_does_not_require_loss_for_signal_found() -> None:
+    assessment = _build_assessment_fields(
+        sample_count=4,
+        window_s=30,
+        sources_seen=["metrics_window", "k8s_telemetry", "kube_object_context"],
+        signal_count=1,
+        actionable_proposal_count=2,
+        signals={"notes": ["loss_missing"]},
+    )
+
+    assert assessment.get("assessment_result_class") == "signal_found"
+    assert assessment.get("coverage_ok") is True
+    assert "missing_required_evidence_family:loss" not in (assessment.get("insufficient_evidence_reasons") or [])
+
+
+def test_build_assessment_fields_still_requires_core_coverage() -> None:
+    assessment = _build_assessment_fields(
+        sample_count=4,
+        window_s=30,
+        sources_seen=["k8s_telemetry"],
+        signal_count=1,
+        actionable_proposal_count=2,
+        signals={"notes": ["loss_missing"]},
+    )
+
+    assert assessment.get("assessment_result_class") == "insufficient_evidence"
+    reasons = assessment.get("insufficient_evidence_reasons") or []
+    assert "missing_required_evidence_family:metrics_window" in reasons

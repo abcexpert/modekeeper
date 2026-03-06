@@ -275,8 +275,6 @@ def _build_assessment_fields(
         insufficient_evidence_reasons.append("missing_metrics_window")
     if "metrics_window" not in sources_seen:
         insufficient_evidence_reasons.append("missing_required_evidence_family:metrics_window")
-    if isinstance(signals, dict) and "loss_missing" in (signals.get("notes") or []):
-        insufficient_evidence_reasons.append("missing_required_evidence_family:loss")
 
     insufficient_evidence_reasons = sorted(set(insufficient_evidence_reasons))
     coverage_ok = len(insufficient_evidence_reasons) == 0
