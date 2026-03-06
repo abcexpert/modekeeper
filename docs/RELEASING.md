@@ -1,52 +1,50 @@
-# Releasing (One Button)
+# Releasing (Public)
 
-## Related docs
-- `docs/HANDOFF.md` - customer handoff flow and verify/export steps.
-- `docs/SNAPSHOT.md` - canonical customer-managed execution model and status context.
+This document describes the public release process for the ModeKeeper open-source surface.
 
-Run releases from WSL2 in the public repo checkout:
+## Scope and boundaries
 
-- Public repo: `~/code/modekeeper`
-- Private repo: `~/code/modekeeper-private`
+Public release artifacts are published to:
 
-## Prerequisites
+- GitHub (source tags and GitHub Releases)
+- PyPI (`modekeeper` package)
 
-- `gh` authenticated: `gh auth login`
-- Remotes named `github` in both repos:
-  - public: `abcexpert/modekeeper`
-  - private: `abcexpert/modekeeper-private`
-- Both repos have `main` checked out and clean worktrees before running.
+This document intentionally excludes internal/commercial operational workflows. Any licensed or commercial distribution tracks are managed separately and are not part of the public release procedure described here.
 
-## Command
+## Public release readiness
 
-From `~/code/modekeeper`:
+Before creating a release:
 
-```bash
-./scripts/mk-release-all.sh
-```
+- Ensure `main` is green in CI and ready to ship.
+- Ensure release notes content is appropriate for public audiences.
+- Ensure version metadata is final and consistent with the intended public package version.
+- Ensure your local checkout is clean and up to date.
 
-The script will:
+## Public release procedure
 
-- enforce clean `main` and hard-reset to `<remote>/main` for both repos
-- create/push annotated tags
-- create missing GitHub releases with `--generate-notes`
-- wait for PyPI wheel visibility, then validate install/version consistency
-- sync private `pyproject.toml` version to public when needed, then tag/release private
+1. Finalize the release version in repository metadata.
+2. Create and push a version tag from the public repository.
+3. Publish a GitHub Release for that tag (notes/changelog should be public-safe).
+4. Publish the corresponding package version to PyPI.
+5. Verify the release boundary end to end:
+   - tag is visible in GitHub
+   - GitHub Release exists and is publicly readable
+   - package is installable from PyPI at the expected version
 
-## Customer-managed execution note
+## Runtime execution boundary (customer-managed)
 
-Release automation is vendor-side packaging only. Customer runtime execution remains self-serve and read-only:
+Publishing a public release does not execute customer workloads. Runtime operation remains customer-managed:
 
-- customer-managed read-only k8s runner
-- runner executes `mk quickstart --out /out/quickstart`
-- artifacts are collected via `kubectl cp ...:/out/quickstart`
-- local workstation builds `mk export handoff-pack`
-- `bash HANDOFF_VERIFY.sh` is the verify step
-- read-only verify patch denial (`top_blocker=rbac_denied`) is a non-blocking note in this self-serve flow
+- customers run ModeKeeper in their own environments
+- customers control cluster/runtime permissions and data access boundaries
+- release publication updates distributable software only (source/package), not customer-side execution state
 
-## PyPI note
+## Public vs licensed/commercial surfaces
 
-Publishing to PyPI automatically creates the release entry in:
-`https://pypi.org/manage/project/modekeeper/releases/`
+ModeKeeper has a public release-facing surface (GitHub + PyPI) and may have separately licensed/commercial delivery paths.
 
-No separate PyPI UI release-creation step is required.
+For public docs and release communication:
+
+- describe only the public artifacts and public install/update path
+- avoid implying unified public+private orchestration
+- keep internal sequencing and private operational tooling out of public release documentation
