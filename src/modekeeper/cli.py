@@ -5582,7 +5582,7 @@ def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
         "      containers:\n"
         "      - name: runner\n"
         f"        image: {image}\n"
-        "        command: [\"/bin/sh\",\"-c\",\"mk doctor --out /out/doctor; echo MODEKEEPER_DONE; sleep 900\"]\n"
+        "        command: [\"/bin/sh\",\"-c\",\"mk quickstart --out /out/quickstart; echo MODEKEEPER_DONE; sleep 900\"]\n"
         "        volumeMounts:\n"
         "        - name: out\n"
         "          mountPath: /out\n"
@@ -5608,11 +5608,12 @@ def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
         f"kubectl auth can-i delete jobs.batch --as=system:serviceaccount:{namespace}:{serviceaccount}\n"
         "```\n\n"
         "## Collect Artifacts\n\n"
-        "Get logs and copy `/out` artifacts from the runner pod:\n\n"
+        "Get logs and copy `/out/quickstart` artifacts from the runner pod:\n\n"
         "```bash\n"
         f"kubectl -n {namespace} logs job/{job_name}\n"
         f"POD_NAME=$(kubectl -n {namespace} get pods -l job-name={job_name} -o jsonpath='{{.items[0].metadata.name}}')\n"
-        f"kubectl -n {namespace} cp \"$POD_NAME\":/out ./out\n"
+        f"kubectl -n {namespace} cp \"$POD_NAME\":/out/quickstart ./out/quickstart\n"
+        "mk export handoff-pack --in ./out/quickstart --out ./handoff\n"
         "```\n"
     )
     apply_sh = (
