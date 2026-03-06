@@ -24,6 +24,7 @@ def test_k8s_log_source_container_auto_omits_dash_c(monkeypatch) -> None:
 
     argv = seen["argv"]
     assert "-c" not in argv
+    assert "--timestamps" in argv
 
 
 def test_k8s_log_source_container_explicit_includes_dash_c(monkeypatch) -> None:

@@ -19,29 +19,34 @@ Assets location:
 
 ## Scenario 1: Oversized Requests
 
-Objective: force oversized CPU/memory request signal.
+Objective: force oversized CPU/memory request signal on `frontend` (first intended non-zero proof path).
 
 Apply scenario setup:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh apply oversized_requests default
+examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh apply oversized_requests onlineboutique
 ```
 
 Run assessment:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/run_readonly_assessment.sh default productcatalogservice report/online_boutique/forced_oversized 60s
+examples/online-boutique/forced-opportunity/scripts/run_readonly_assessment.sh onlineboutique frontend report/online_boutique/forced_oversized 60s
 ```
+
+Helper output layout:
+- `report/online_boutique/forced_oversized/observe` from `mk observe --source k8s-logs`
+- `report/online_boutique/forced_oversized/closed_loop` from `mk closed-loop run --observe-source k8s-logs`
+- `report/online_boutique/forced_oversized/watch` from `mk closed-loop watch --observe-source k8s-logs`
 
 Expected assessment outcome: `assessment_result_class=signal_found` when evidence is sufficient.
 
 Cleanup:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh delete oversized_requests default
+examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh delete oversized_requests onlineboutique
 ```
 
-Then restore your baseline deployment manifest for `productcatalogservice`.
+This scenario uses `kubectl patch` and restores the pre-patch `frontend` resources from local state. If local state is missing, restore your baseline `frontend` deployment config manually.
 
 ## Scenario 2: Replica Overprovisioning
 
@@ -50,13 +55,13 @@ Objective: force low-utilization overprovisioning signal.
 Apply scenario setup:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh apply replica_overprovisioning default
+examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh apply replica_overprovisioning onlineboutique
 ```
 
 Run assessment:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/run_readonly_assessment.sh default emailservice report/online_boutique/forced_replicas 60s
+examples/online-boutique/forced-opportunity/scripts/run_readonly_assessment.sh onlineboutique emailservice report/online_boutique/forced_replicas 60s
 ```
 
 Expected assessment outcome: `assessment_result_class=signal_found` when evidence is sufficient.
@@ -64,10 +69,10 @@ Expected assessment outcome: `assessment_result_class=signal_found` when evidenc
 Cleanup:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh delete replica_overprovisioning default
+examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh delete replica_overprovisioning onlineboutique
 ```
 
-Then restore your baseline replica count for `emailservice`.
+This scenario uses `kubectl patch` and restores the pre-patch `emailservice` replica count from local state. If local state is missing, restore your baseline replica count manually.
 
 ## Scenario 3: Burst Traffic
 
@@ -76,14 +81,14 @@ Objective: force burst sensitivity / scaling-gap conditions.
 Apply scenario setup:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh apply burst_traffic default
-kubectl -n default wait --for=condition=Complete --timeout=10m job/modekeeper-burst-traffic
+examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh apply burst_traffic onlineboutique
+kubectl -n onlineboutique wait --for=condition=Complete --timeout=10m job/modekeeper-burst-traffic
 ```
 
 Run assessment:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/run_readonly_assessment.sh default checkoutservice report/online_boutique/forced_burst 60s
+examples/online-boutique/forced-opportunity/scripts/run_readonly_assessment.sh onlineboutique checkoutservice report/online_boutique/forced_burst 60s
 ```
 
 Expected assessment outcome: `assessment_result_class=signal_found` when evidence is sufficient.
@@ -91,7 +96,7 @@ Expected assessment outcome: `assessment_result_class=signal_found` when evidenc
 Cleanup:
 
 ```bash
-examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh delete burst_traffic default
+examples/online-boutique/forced-opportunity/scripts/apply_scenario.sh delete burst_traffic onlineboutique
 ```
 
 ## Notes

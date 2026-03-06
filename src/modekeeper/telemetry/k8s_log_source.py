@@ -14,6 +14,10 @@ from modekeeper.telemetry.raw_recorder import RawRecorder
 from modekeeper.telemetry.sources import TelemetrySource
 
 _KV_RE = re.compile(r"(?P<key>[A-Za-z0-9_]+)=(?P<value>[^\\s]+)")
+_DURATION_RE = re.compile(r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>ms|s|us|µs|ns)\b", re.IGNORECASE)
+_RFC3339_NANO_RE = re.compile(
+    r"^(?P<prefix>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(?P<fraction>\d{7,})(?P<suffix>Z|[+-]\d{2}:\d{2})$"
+)
 _TELEMETRY_ANNOTATION = "modekeeper/telemetry"
 _STDOUT_JSONL_MODE = "stdout-jsonl"
 
@@ -82,6 +86,50 @@ def _normalize_number(value: object) -> str | None:
     return text
 
 
+def _parse_duration_to_ms(value: object) -> float | None:
+    if value is None:
+        return None
+    text = str(value).strip().rstrip(",;")
+    if not text:
+        return None
+    lowered = text.lower()
+    try:
+        if lowered.endswith("ms"):
+            return float(lowered[:-2].strip())
+        if lowered.endswith("us") or lowered.endswith("µs"):
+            return float(lowered[:-2].strip()) / 1000.0
+        if lowered.endswith("ns"):
+            return float(lowered[:-2].strip()) / 1_000_000.0
+        if lowered.endswith("s"):
+            return float(lowered[:-1].strip()) * 1000.0
+        return float(lowered)
+    except Exception:
+        return None
+
+
+def _extract_duration_from_text(text: str) -> float | None:
+    if not text:
+        return None
+    match = _DURATION_RE.search(text)
+    if match is None:
+        return None
+    value_raw = match.group("value")
+    unit = match.group("unit").lower()
+    try:
+        value = float(value_raw)
+    except Exception:
+        return None
+    if unit == "ms":
+        return value
+    if unit == "s":
+        return value * 1000.0
+    if unit in ("us", "µs"):
+        return value / 1000.0
+    if unit == "ns":
+        return value / 1_000_000.0
+    return None
+
+
 def _parse_payload(payload: str) -> dict | None:
     if not payload:
         return None
@@ -101,6 +149,20 @@ def _pick(record: dict, keys: list[str]) -> object | None:
     return None
 
 
+def _parse_k8s_ts_ms(value: object) -> int:
+    try:
+        return _parse_ts_ms(value)
+    except Exception:
+        pass
+
+    text = str(value).strip()
+    match = _RFC3339_NANO_RE.match(text)
+    if match is None:
+        raise ValueError(f"Unsupported k8s timestamp: {text}")
+    normalized = f"{match.group('prefix')}.{match.group('fraction')[:6]}{match.group('suffix')}"
+    return _parse_ts_ms(normalized)
+
+
 def parse_k8s_log_lines(lines: list[str]) -> list[TelemetrySample]:
     samples: list[TelemetrySample] = []
     for raw in lines:
@@ -113,29 +175,46 @@ def parse_k8s_log_lines(lines: list[str]) -> list[TelemetrySample]:
         if " " in line:
             first, rest = line.split(" ", 1)
             try:
-                _parse_ts_ms(first)
+                _parse_k8s_ts_ms(first)
                 ts_token = first
                 payload = rest.strip()
             except Exception:
                 payload = line
 
-        record = _parse_payload(payload) or _parse_payload(line)
-        if not record:
-            continue
+        record = _parse_payload(payload) or _parse_payload(line) or {}
 
-        ts_value = record.get("ts") or record.get("t") or record.get("timestamp") or ts_token
+        ts_value = _pick(record, ["ts", "t", "timestamp", "time", "@timestamp"]) or ts_token
         if ts_value is None:
             continue
 
-        step_value = record.get("step_time_ms") or record.get("step_time") or record.get("latency_ms")
-        if step_value is None:
+        step_value = _pick(
+            record,
+            [
+                "step_time_ms",
+                "step_time",
+                "latency_ms",
+                "latency",
+                "duration_ms",
+                "duration",
+                "request_duration_ms",
+                "request_time_ms",
+                "request_latency_ms",
+                "response_time_ms",
+                "elapsed_ms",
+                "elapsed",
+                "took_ms",
+                "took",
+                "http.resp.took_ms",
+                "http_resp_took_ms",
+            ],
+        )
+        step_time_ms = _parse_duration_to_ms(step_value)
+        if step_time_ms is None:
+            step_time_ms = _extract_duration_from_text(payload)
+        if step_time_ms is None:
             continue
 
-        ts_ms = _parse_ts_ms(ts_value)
-        step_text = _normalize_number(step_value)
-        if step_text is None:
-            continue
-        step_time_ms = float(step_text)
+        ts_ms = _parse_k8s_ts_ms(ts_value)
 
         loss_raw = record.get("loss")
         loss_text = _normalize_number(loss_raw)
@@ -182,7 +261,7 @@ def parse_k8s_stdout_jsonl(lines: list[str]) -> list[TelemetrySample]:
         if ts_value is None or step_value is None or throughput_value is None:
             continue
         try:
-            ts_ms = _parse_ts_ms(ts_value)
+            ts_ms = _parse_k8s_ts_ms(ts_value)
             step = int(step_value)
             throughput = float(throughput_value)
         except Exception:
@@ -350,6 +429,7 @@ class K8sLogSource(TelemetrySource):
         container = str(self.container or "").strip()
         if container and container != "auto":
             argv += ["-c", container]
+        argv += ["--timestamps"]
         argv += ["--since", f"{since_s}s"]
 
         res = _run_cmd(argv, timeout_s=self.timeout_s)

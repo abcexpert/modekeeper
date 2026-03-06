@@ -1,8 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: productcatalogservice
-  namespace: default
+  name: frontend
 spec:
   template:
     spec:
