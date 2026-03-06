@@ -17,6 +17,7 @@ Kubernetes/GPU cost and risk assessment, customer-managed execution, and change-
 - [Observability Contract v1](OBSERVABILITY_CONTRACT.md)
 - [Forced Opportunity Scenarios v1](FORCED_OPPORTUNITY_SCENARIOS.md)
 - [Online Boutique forced-opportunity runbook](ONLINE_BOUTIQUE_FORCED_OPPORTUNITIES.md)
+- [Online Boutique external proof summary](ONLINE_BOUTIQUE_PROOF.md)
 - [K8s customer-managed runner runbook](K8S_RUNNER_SELF_SERVE.md)
 
 ## Customer-managed execution and handoff

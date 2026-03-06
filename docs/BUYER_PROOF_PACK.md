@@ -38,3 +38,6 @@ Key artifact locations:
   - gate behavior reference: `docs/WORKFLOW.md`
 
 For public/private boundary and distribution controls, use `docs/DISTRIBUTION_POLICY.md`.
+
+Related public external workload proof summary:
+- `docs/ONLINE_BOUTIQUE_PROOF.md` (artifacts remain local under `report/online_boutique/**`)

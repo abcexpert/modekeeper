@@ -35,6 +35,16 @@ Verify (when a `checksums.sha256` manifest is included with the handoff):
 cd report/buyer_pack && sha256sum -c checksums.sha256
 ```
 
+### External realistic workload proof (Online Boutique)
+
+Public summary:
+- `docs/ONLINE_BOUTIQUE_PROOF.md`
+
+Local artifacts (customer-managed, not committed to git):
+- `report/online_boutique/BUYER_PROOF_INDEX.md`
+- `report/online_boutique/forced_oversized/**`
+- `report/online_boutique/forced_burst/**`
+
 ### 2) Procurement pack
 
 Run:
