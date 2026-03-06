@@ -39,6 +39,7 @@ def test_cli_install_k8s_runner_generates_expected_bundle(tmp_path: Path, mk_pat
     assert "kind: ClusterRole" in rbac_yaml
     assert "kind: ClusterRoleBinding" in rbac_yaml
     assert "kind: Job" in job_yaml
+    assert "mk quickstart --out /out/quickstart" in job_yaml
     assert "sleep 900" in job_yaml
     assert "MODEKEEPER_DONE" in job_yaml
 
