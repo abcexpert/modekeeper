@@ -86,7 +86,7 @@
 
 - ID: MK-134
   Title: Self-serve runbook: install/upgrade/rollback/uninstall + air-gapped notes
-  Status: TODO
+  Status: DONE
   Acceptance criteria:
     - A single customer-facing runbook covers install, upgrade, rollback, uninstall, and operational checks.
     - Air-gapped guidance includes artifact transport, integrity verification, and offline execution constraints.
@@ -102,6 +102,18 @@
     - artifacts:
       - references existing MK-133 e2e flow: runner quickstart -> `kubectl cp /out/quickstart` -> `mk export handoff-pack` -> `HANDOFF_VERIFY.sh`
       - explicitly documents non-blocking `top_blocker=rbac_denied` verify note in read-only flow
+    - lifecycle validation (abc2/kind):
+      - install validated
+      - upgrade/update validated
+      - rollback validated
+      - uninstall validated
+    - local kind flow:
+      - used `modekeeper-runner:latest` with `--image-pull-policy Never`
+    - completion signal:
+      - `MODEKEEPER_DONE` used as the reliable runner completion signal
+      - pod `phase=Running` wait is not treated as the primary success criterion
+    - note:
+      - read-only verify patch denial remains non-blocking in self-serve flow
 
 - ID: MK-135
   Title: Docs alignment: update HANDOFF/RELEASING/SNAPSHOT wording for customer-managed execution

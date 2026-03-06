@@ -32,11 +32,22 @@ kubectl -n "$NS" get job "$JOB"
 kubectl -n "$NS" logs job/"$JOB" | tail -n 50
 ```
 
-Wait for quickstart completion marker:
+Primary success criterion (preferred):
 
 ```bash
 kubectl -n "$NS" logs job/"$JOB" | grep -F "MODEKEEPER_DONE"
 ```
+
+Secondary operational checks (optional, not primary):
+
+```bash
+kubectl -n "$NS" get job "$JOB" -o jsonpath='{.status.succeeded}'; echo
+kubectl -n "$NS" get pods -l job-name="$JOB" -o wide
+```
+
+Note:
+- Do not rely on `kubectl wait ... --for=jsonpath='{.status.phase}'=Running` as the main success signal for this Job.
+- `MODEKEEPER_DONE` in logs is the reliable completion marker for the runner quickstart flow.
 
 ## 2) Local kind image note
 
@@ -134,6 +145,7 @@ Post-update checks:
 ```bash
 kubectl -n "$NS" get job "$JOB"
 kubectl -n "$NS" logs job/"$JOB" | grep -F "MODEKEEPER_DONE"
+kubectl -n "$NS" get job "$JOB" -o jsonpath='{.status.succeeded}'; echo
 ```
 
 ## 7) Rollback and uninstall
