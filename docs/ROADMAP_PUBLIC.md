@@ -1,57 +1,51 @@
 # ModeKeeper Public Roadmap
 
-## What ModeKeeper is
-ModeKeeper is a verify-first operations agent for SRE/MLOps/FinOps workflows. In the public showroom, workflows are intentionally read-only (`observe -> dry-run plan -> verify -> ROI -> export`) so teams can evaluate safety, controls, and value evidence without cluster mutation. Licensed apply is a separate gated path (`--apply`) that only proceeds when verification passes, kill-switch is not active, and license entitlements allow mutation.
+## Product direction (public)
+ModeKeeper is a verify-first operations product for SRE/MLOps/FinOps teams.
+The public path is read-only by default (`observe -> dry-run plan -> verify -> ROI -> export`) so teams can assess safety, controls, and value before discussing execution changes.
 
-References: `README.md`, `docs/WORKFLOW.md`, `docs/DISTRIBUTION_POLICY.md`, `docs/QUICKSTART.md`.
+Execution remains customer-managed: organizations run ModeKeeper in their own environment, with their own controls, identities, and change-management policy.
 
-## Shipped today (public + buyer/procurement flow)
-- Verify-first read-only workflow and artifacts:
-  - `mk quickstart --out report/quickstart`
-  - Key outputs: `report/quickstart/plan/closed_loop_latest.json`, `report/quickstart/verify/k8s_verify_latest.json`, `report/quickstart/export/bundle_summary.md`
-  - See `docs/QUICKSTART.md`, `docs/CLI_REFERENCE.md`.
-- Deterministic bundle export for reviewer handoff:
-  - `mk export bundle --in report/quickstart --out report/quickstart/export`
-  - Outputs: `bundle_manifest.json`, `bundle.tar.gz`, `bundle_summary.md`
-  - See `docs/CLI_REFERENCE.md`.
-- Buyer evidence pack (customer-safe, read-only):
-  - `./bin/mk-buyer-pack`
-  - Outputs under `report/buyer_pack/**` (plan/verify/preflight/eval/watch/roi/export/dryrun)
-  - See `docs/BUYER_PROOF_PACK.md`.
-- Procurement/RFI pack with integrity artifacts:
-  - `./bin/mk-procurement-pack`
-  - Outputs: `report/procurement_pack/procurement_pack.tar.gz`, `report/procurement_pack/checksums.sha256`, `report/procurement_pack/buyer_pack/**`, `report/procurement_pack/docs/**`
-  - See `docs/PROCUREMENT_PACK.md`.
-- One-command enterprise evaluation index:
-  - `./bin/mk-enterprise-eval`
-  - Output: `report/enterprise_eval/index.md`
-  - See `docs/ENTERPRISE_EVALUATION.md`.
-- Licensed apply gates are implemented in CLI flow:
-  - Commands: `mk license verify`, `mk k8s apply`, `mk closed-loop run --apply`
-  - Gate signals in artifacts: `verify_ok`, `apply_blocked_reason`, `kill_switch_active`, `license_ok`
-  - See `docs/WORKFLOW.md`, `docs/CLI_REFERENCE.md`.
+## What is available now
+- Verify-first read-only assessment flow with reproducible evidence artifacts.
+- Deterministic export bundles for reviewer handoff and audit sharing.
+- Buyer/procurement packaging for security, risk, and architecture review.
+- Enterprise evaluation index for structured multi-stakeholder review.
+- Public documentation set focused on evaluation, safety posture, and procurement readiness.
 
-## Enterprise commercial next (priority)
-- License key management hardening: explicit `kid`, rotation workflow, verification allowlist, and optional trust chain mode for enterprise PKI interoperability.
-- Absolute kill-switch operations at fleet scope: fail-closed behavior, out-of-band propagation, and tamper-evident audit trail for emergency mutation stop.
-- License lifecycle controls: revocation/status checks, short-lived/renewable licenses, and reason-coded deny telemetry for SOC workflows.
-- Identity + approvals: SSO-backed RBAC, dual-control approvals for apply, and immutable decision/audit logs mapped to reviewer identity.
-- Apply safety depth: staged/canary apply with automatic rollback enforcement (beyond current rollback-plan references).
-- Kubernetes coverage expansion: first-class support beyond deployment patches (broader object kinds and validators).
-- Release provenance upgrades: signed release assets + SBOM/attestation packaged with procurement artifacts.
-- Centralized policy/governance plane: multi-cluster policy propagation, drift detection, and control attestation at organization scope.
+Primary references: `README.md`, `docs/QUICKSTART.md`, `docs/PROCUREMENT_PACK.md`, `docs/ENTERPRISE_EVALUATION.md`, `docs/SECURITY_QA.md`.
 
-## How to evaluate (short path)
-1. Download release assets (`procurement_pack.tar.gz` and `checksums.sha256`) from the GitHub Release for your target version (`docs/RELEASE.md`, `docs/RELEASE_PROCESS.md`).
-2. Verify integrity:
-   - `sha256sum -c checksums.sha256`
-3. Unpack and inspect key evidence:
-   - `buyer_pack/plan/closed_loop_latest.json`
-   - `buyer_pack/verify/k8s_verify_latest.json`
-   - `buyer_pack/export/bundle_summary.md`
-4. Interpret decision signals in `bundle_summary.md`:
-   - `roi.ok: true` means ROI pipeline checks passed for the exported input set.
-   - `top_blocker: n/a` means no blocking condition was detected.
-   - Any non-empty `top_blocker` is the first remediation target before apply discussions.
+## Roadmap themes
 
-See also: `docs/BUYER_PROOF_PACK.md`, `docs/PROCUREMENT_PACK.md`, `docs/SECURITY_QA.md`.
+### 1) Stronger verify-first assessment
+- Expand read-only assessment coverage for more real-world Kubernetes and platform scenarios.
+- Improve evidence clarity so reviewers can quickly understand decisions, blockers, and expected impact.
+- Keep outputs deterministic and easy to compare across runs and environments.
+
+### 2) Customer-managed execution readiness
+- Maintain a strict separation between read-only assessment and execution paths.
+- Improve policy-friendly handoff artifacts that let customer operators review, approve, and execute changes in their own systems.
+- Strengthen controls visibility needed for enterprise change governance.
+
+### 3) Change-ready handoff packs
+- Evolve export bundles into decision-ready handoff packs for platform, security, and CAB-style review.
+- Improve artifact structure for traceability from observed state to proposed change intent.
+- Reduce reviewer friction with clearer summaries and consistent evidence indexing.
+
+### 4) Enterprise and procurement-safe posture
+- Expand procurement-facing evidence for security and compliance workflows.
+- Improve packaging for legal, risk, and architecture review cycles.
+- Keep public artifacts and docs aligned with buyer due-diligence expectations.
+
+### 5) Public showroom evolution (high level)
+- Continue improving the public showroom as a safe, read-only evaluation experience.
+- Add higher-level examples and proof narratives for common enterprise scenarios.
+- Preserve a clear boundary: public roadmap communicates product direction, not internal delivery choreography.
+
+## Evaluation path for new teams
+1. Run the read-only quickstart flow and generate evidence artifacts.
+2. Review verify and ROI outputs with platform/security stakeholders.
+3. Export a handoff bundle for enterprise/procurement review.
+4. Decide internally whether and how to progress toward customer-managed execution.
+
+Start points: `docs/QUICKSTART.md`, `docs/BUYER_PROOF_PACK.md`, `docs/PROCUREMENT_PACK.md`.
