@@ -1,129 +1,90 @@
 # HANDOFF
 
 ## See also
-- `docs/RELEASING.md` - release automation boundary and customer-managed execution note.
-- `docs/SNAPSHOT.md` - canonical runtime/export model and current continuation context.
+- `docs/SNAPSHOT.md` - current product state and canonical execution model.
+- `docs/K8S_RUNNER_SELF_SERVE.md` - customer-managed runner lifecycle.
+- `docs/DISTRIBUTION_POLICY.md` - public vs licensed distribution boundary.
+- `docs/RELEASING.md` - release boundary and packaging context.
 
-## Elevator pitch
-ModeKeeper — verify-first агент для Kubernetes/ML-окружений: по умолчанию только read-only наблюдение, план и проверка, без мутаций.
-Продукт закрывает риск «автотюна без контроля» через жёсткие safety-gates перед любым apply.
-Enterprise получает детерминированные артефакты (JSON/MD), decision trace и проверяемый audit trail для change-control.
-Коммерческий путь разделён: public surface для безопасного eval/onboarding, private surface для PRO-функций и поставки.
-Apply включается только при лицензии и после verify-ok; kill-switch остаётся абсолютным блокером.
-Это позволяет запускать пилот быстро, но с контрактами безопасности и поставки, пригодными для procurement/security review.
+## Buyer-facing summary
+ModeKeeper uses a verify-first model for Kubernetes/ML operations.
+Default public workflows are read-only (`observe -> plan -> verify -> export`) and are intended for safe evaluation without cluster mutation.
+Licensed apply is a separate gated path and is not part of baseline public handoff execution.
 
-## Customer-managed self-serve canonical flow
-- Runtime model: customer-managed read-only k8s runner.
-- Runner command: `mk quickstart --out /out/quickstart`.
-- Artifact collection from runner pod: `kubectl cp ...:/out/quickstart`.
-- Local packaging step: `mk export handoff-pack`.
-- Verify step: `bash HANDOFF_VERIFY.sh`.
-- Read-only verify patch denial (`top_blocker=rbac_denied`) is a non-blocking note in this self-serve flow.
+## What the customer receives
+A standard handoff pack is built as deterministic artifacts that can be transferred, validated, and reviewed by the customer team:
 
-## Где что лежит
-- Public repo (showroom/stub): `/home/oleg/code/modekeeper`
-- Private repo (PRO/commercial): `/home/oleg/code/modekeeper-private`
+- `handoff_pack.tar.gz`
+- `handoff_manifest.json`
+- `handoff_summary.md`
+- `handoff_pack.checksums.sha256`
+- `HANDOFF_VERIFY.sh`
+- `README.md`
 
-Ключевые директории:
-- Public core code: `/home/oleg/code/modekeeper/src/modekeeper/`
-- Private core code: `/home/oleg/code/modekeeper-private/src/modekeeper/`
-- Public docs/evidence: `/home/oleg/code/modekeeper/docs/`, `/home/oleg/code/modekeeper/docs/evidence/`
-- Private docs/evidence: `/home/oleg/code/modekeeper-private/docs/`, `/home/oleg/code/modekeeper-private/docs/evidence/`
-- Public scripts/release: `/home/oleg/code/modekeeper/scripts/`
-- Private service/release helpers: `/home/oleg/code/modekeeper-private/bin/`, `/home/oleg/code/modekeeper-private/tools/systemd/`
+This package is designed for security/procurement review and operational continuity:
+- integrity-first review (hash verification before content review),
+- reproducible evidence trail,
+- portable archive for internal sharing and audit.
 
-CLI entrypoints:
-- Console entrypoint (оба репо): `mk = modekeeper.cli:main` (`pyproject.toml`)
-- Public installer/onboarding: `/home/oleg/code/modekeeper/bin/mk-install`, `/home/oleg/code/modekeeper/bin/mk-doctor`, `/home/oleg/code/modekeeper/bin/mk-enterprise-eval`
-- Private ops/release: `/home/oleg/code/modekeeper-private/bin/mk-release-stub`, `/home/oleg/code/modekeeper-private/bin/mk-procurement-pack`, `/home/oleg/code/modekeeper-private/bin/mk-license-issue`, `/home/oleg/code/modekeeper-private/bin/mk-license-revoke`
+## Change-ready handoff pack
+The handoff is "change-ready" because it includes both context and verification material needed to continue safely:
 
-## Что читать (порядок)
-1. `/home/oleg/code/modekeeper/docs/SNAPSHOT.md`
-2. `/home/oleg/code/modekeeper/docs/TICKETS.md`
-3. `/home/oleg/code/modekeeper/docs/DEFINITION_OF_DONE.md`
-4. `/home/oleg/code/modekeeper/docs/RELEASING.md`
+- run outputs from customer-managed execution,
+- manifest-level inventory of delivered files,
+- checksum manifest for tamper detection,
+- one-command verification script (`HANDOFF_VERIFY.sh`),
+- concise summary for quick buyer/operator triage.
 
-Для private ветки работ после этого:
-1. `/home/oleg/code/modekeeper-private/docs/SNAPSHOT.md`
-2. `/home/oleg/code/modekeeper-private/docs/TICKETS.md`
-3. `/home/oleg/code/modekeeper-private/docs/DEFINITION_OF_DONE.md`
-4. `/home/oleg/code/modekeeper-private/docs/RELEASE.md`
+The result is a package that supports controlled continuation of evaluation and change planning without requiring vendor runtime access.
 
-## Статус сейчас
-- Public last tag: `v0.1.29` (из `git describe --tags --abbrev=0` в `/home/oleg/code/modekeeper`)
-- Public project version: `0.1.29` (`/home/oleg/code/modekeeper/pyproject.toml`)
-- Canonical release command (one-button, public+private):
-  - из `/home/oleg/code/modekeeper`: `./scripts/mk-release-all.sh`
-- Public-only release command:
-  - из `/home/oleg/code/modekeeper`: `./scripts/release_public.sh`
+## Customer-managed self-serve flow (canonical)
+1. Run customer-managed read-only quickstart in the runner environment.
+2. Copy artifacts from runner output to customer-controlled storage.
+3. Build handoff package locally:
 
-## План до enterprise-ready
-Источник: `docs/TICKETS.md`.
+```bash
+mk export handoff-pack --in ./out/quickstart --out ./handoff
+```
 
-Важно: в public `/home/oleg/code/modekeeper/docs/TICKETS.md` сейчас нет `TODO/INPROGRESS` (все тикеты `DONE`).
-Ниже — оставшиеся `TODO` из private `/home/oleg/code/modekeeper-private/docs/TICKETS.md`, отсортированные по зависимости `license → safety → audit → bundles → e2e/export/docs`.
+4. Verify package integrity before review:
 
-### License
-- `MK-129` — Phase-3: Licensing v2 trust chain (root -> issuer) — tooling + enforcement
-  - Status: `TODO`
-  - DoD-смысл: ввести обязательную trust-chain проверку (root→issuer) в license/apply gates, включая rotation/revocation semantics.
-  - Evidence: `docs/evidence/mk129_license_trust_chain/` (stub: `trust_chain_bundle_latest.json`, `license_verify_chain_latest.json`, `rotation_drill.md`)
+```bash
+cd ./handoff
+bash HANDOFF_VERIFY.sh
+```
 
-### Safety
-- `MK-123` — Phase-3: Quarantine/Isolation v1 — read-only detection + recommended plan + safe apply constraints
-  - Status: `TODO`
-  - DoD-смысл: добавить quarantine/isolation detection в read-only фазе и блок/ограничения apply до условий выхода.
-  - Evidence: `docs/evidence/mk123_quarantine/` (stub: `quarantine_detect_latest.json`, `isolation_plan_latest.json`, `gate_blocked_example.json`)
-- `MK-124` — Phase-3: Apply v1 controls — knobs + guardrails + cooldown enforcement
-  - Status: `TODO`
-  - DoD-смысл: зафиксировать и enforce-ить apply controls (bounds/guardrails/cooldown) с детерминированными reason-кодами.
-  - Evidence: `docs/evidence/mk124_apply_controls/` (stub: `apply_controls_latest.json`, `cooldown_blocked.json`, `contract_diff.md`)
-- `MK-125` — Phase-3: Apply v1 resilience — verify-after-apply + auto-rollback + decision trace contract
-  - Status: `TODO`
-  - DoD-смысл: после apply всегда делать verify-after-apply и запускать auto-rollback при fail, с обязательными trace events.
-  - Evidence: `docs/evidence/mk125_apply_resilience/` (stub: `verify_after_apply_latest.json`, `rollback_attempt_latest.json`, `decision_trace_slice.jsonl`)
+Success criterion: verification prints `OK`.
 
-### Audit
-- `MK-122` — Phase-3: Release policy (private) — GitHub Releases notes-only + links to vault deliverables
-  - Status: `TODO`
-  - DoD-смысл: закрепить private release policy (notes-only + vault links) и policy-check на отсутствие binary attachments.
-  - Evidence: `docs/evidence/mk122_private_release_policy/` (stub: `release_notes_template.md`, `policy_check.log`, `vault_verify_transcript.txt`)
+Operational note:
+- `top_blocker=rbac_denied` in read-only verify artifacts is a non-blocking note for this handoff flow and does not prevent handoff-pack verification.
 
-### Bundles
-- `MK-127` — Phase-3: Standard procurement pack v2 — deterministic contract + acceptance checklist
-  - Status: `TODO`
-  - DoD-смысл: сделать v2 контракт procurement pack обязательным и валидируемым перед упаковкой.
-  - Evidence: `docs/evidence/mk127_procurement_v2/` (stub: `procurement_contract_v2.md`, `acceptance_checklist_latest.json`, `procurement_pack_manifest.json`)
-- `MK-126` — Phase-3: Customer passport deliverable v1 — template/checklist contract
-  - Status: `TODO`
-  - DoD-смысл: стандартизировать customer passport handoff (template + validator + compatibility matrix).
-  - Evidence: `docs/evidence/mk126_passport_deliverable/` (stub: `passport_template_v1.md`, `passport_checklist_latest.json`, `passport_pack_manifest.json`)
+## Checksums and verification policy
+Handoff acceptance starts from integrity checks, not from narrative review.
 
-### E2E / Export / Docs
-- `MK-128` — Phase-3: Evaluation kit v1 — 10-min demo scenario + evidence pointers
-  - Status: `TODO`
-  - DoD-смысл: собрать детерминированный 10-минутный eval-kit с индексом evidence-артефактов и readiness-check.
-  - Evidence: `docs/evidence/mk128_eval_kit/` (stub: `demo_10min_script.md`, `eval_index_latest.md`, `readiness_check.log`)
+Minimum verification policy:
+- run `HANDOFF_VERIFY.sh` on receipt,
+- ensure checksum validation passes,
+- review `handoff_manifest.json` and `handoff_summary.md` only after successful integrity check,
+- archive both pack and verification output in customer-controlled storage.
 
-Отдельно (POST, после core commercial-finish):
-- `MK-130` — Multi-cluster inventory/ROI federation pack — `TODO`, помечен как `Phase-3 (POST)`.
+This keeps evidence handling deterministic and audit-friendly.
 
-## abc2 server/vault/backups
-- Working copies pattern on abc2: `/root/modekeeper*`
-  - confirmed from docs: `/root/modekeeper-private`
-- Bare remotes pattern on abc2: `/home/oleg/*.git`
-  - confirmed from docs: `/home/oleg/modekeeper-private-remote.git`
-- Vault pattern: `<VAULT_PATH>/*`
-  - confirmed from docs: `<VAULT_PATH>/licenses/issuer_keys/`, `<VAULT_PATH>/licenses/ops/`, `<VAULT_PATH>/procurement_pack/`, `<VAULT_PATH>/releases/signing_keys/`
-- Backups pattern: `/root/backups/*`
-  - confirmed from docs: `/root/backups/modekeeper-private/`
+## Public vs PRO boundary (high-level)
+Public surface:
+- verify-first read-only workflows,
+- buyer-safe evaluation and evidence export,
+- no default mutation path in standard public handoff.
 
-Правило: никогда не пушить vault (ни содержимое `<VAULT_PATH>/*`, ни любые секреты/ключи из vault в git/PyPI/GitHub Releases).
+Licensed PRO surface:
+- gated mutate/apply capabilities,
+- additional commercial controls and entitlements,
+- still enforced by safety gates (including verification and kill-switch semantics).
 
-## Next action
-- Next action: `MK-129` (Licensing v2 trust chain) — верхний приоритет по зависимости `license -> ...`.
-- CHECK перед стартом фикса:
-  - подтверждён source-of-truth: `/home/oleg/code/modekeeper-private/docs/TICKETS.md` (тикет `MK-129` всё ещё `TODO`);
-  - есть отдельные тест-кейсы на `valid chain / unknown issuer / expired issuer cert / revoked issuer`;
-  - не используются и не коммитятся реальные vault-ключи (`<VAULT_PATH>/**` только runtime/ops, не git);
-  - контракт ошибок gate детерминирован (reason-коды и non-zero exit) и совместим с текущими `license/apply` entrypoints.
+Boundary principle:
+- customer handoff materials must remain safe to share in public channels,
+- sensitive internal operator/release infrastructure details are excluded from this document.
+
+## Scope of this document
+This `HANDOFF.md` is intentionally customer-facing.
+It describes what is delivered, how it is verified, and how to continue in self-serve mode.
+Internal operator procedures, private infrastructure layout, and internal roadmap content are out of scope.
