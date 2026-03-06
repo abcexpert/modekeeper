@@ -2,14 +2,15 @@
 
 Primary onboarding path: `docs/QUICKSTART.md`.
 This document defines the public-facing execution workflow and boundary model.
+ModeKeeper public workflow is verify-first, strict read-only assessment for Kubernetes/GPU cost and risk.
 
 ## Workflow principles
 
 - Verify-first: assessment starts from evidence and safety checks before any mutation.
-- Read-only by default: canonical public flow is `observe -> plan -> verify -> export`.
+- Strict read-only public path: canonical public flow is `observe -> plan -> verify -> export`.
 - Customer-managed runtime: execution happens in customer-controlled Kubernetes environments.
-- Export boundary: outputs are packaged for enterprise review and handoff.
-- Licensed apply is gated: mutate/apply is a separate, controlled path and not baseline public evaluation.
+- Export boundary: outputs are packaged as a change-ready handoff pack for enterprise review.
+- Licensed apply is gated: mutate/apply is a separate, controlled path and not baseline public assessment.
 
 ## Canonical public flow (read-only assessment)
 
@@ -70,7 +71,7 @@ Boundary semantics:
 - kill-switch and safety controls can block mutation,
 - execution remains customer-managed in customer runtime.
 
-For public-facing evaluation, use read-only flow unless the customer explicitly enters licensed apply under their own controls.
+For public-facing evaluation, stay in the read-only path unless the customer explicitly enters licensed apply under their own controls.
 
 ## Customer-managed execution model
 

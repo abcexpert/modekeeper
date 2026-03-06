@@ -7,8 +7,9 @@ Source of truth: `src/modekeeper/cli.py` (`argparse`).
 - Entrypoint: `mk`
 - Help: `mk --help`
 - ModeKeeper CLI is customer-managed: commands run in your environment with your kubeconfig, permissions, and runtime controls.
-- Recommended default is verify-first: collect evidence, inspect plans, and review artifacts before any licensed apply path.
+- Recommended default is verify-first and strict read-only assessment: collect evidence, inspect plans, and review artifacts before any licensed apply path.
 - `export handoff-pack` is the canonical review/handoff boundary for enterprise-facing artifact exchange.
+- Public assessment path does not perform cluster mutation.
 
 Top-level commands:
 - `eval`

@@ -1,6 +1,6 @@
 # Enterprise Evaluation (30-60 Minutes)
 
-Use this path for a fast enterprise review of a verify-first read-only assessment for Kubernetes/GPU cost and risk, with link-first evidence and a change-ready handoff pack.
+Use this path for a fast enterprise review of a verify-first, read-only assessment for Kubernetes/GPU cost and risk, with customer-managed execution, link-first evidence, and a change-ready handoff pack.
 
 ## Run
 

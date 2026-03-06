@@ -7,9 +7,9 @@
 - `docs/RELEASING.md` - release boundary and packaging context.
 
 ## Buyer-facing summary
-ModeKeeper uses a verify-first model for Kubernetes/ML operations.
-Default public workflows are read-only (`observe -> plan -> verify -> export`) and are intended for safe evaluation without cluster mutation.
-Licensed apply is a separate gated path and is not part of baseline public handoff execution.
+ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk.
+Default public workflows are strict read-only assessment (`observe -> plan -> verify -> export`) for safe evaluation without cluster mutation.
+Execution is customer-managed. Licensed apply/implementation is a separate gated path and is not part of baseline public handoff execution.
 
 ## What the customer receives
 A standard handoff pack is built as deterministic artifacts that can be transferred, validated, and reviewed by the customer team:
@@ -35,9 +35,9 @@ The handoff is "change-ready" because it includes both context and verification 
 - one-command verification script (`HANDOFF_VERIFY.sh`),
 - concise summary for quick buyer/operator triage.
 
-The result is a package that supports controlled continuation of evaluation and change planning without requiring vendor runtime access.
+The result is a package that supports controlled continuation of evaluation and change planning without requiring vendor-operated runtime access.
 
-## Customer-managed self-serve flow (canonical)
+## Customer-managed flow (canonical)
 1. Run customer-managed read-only quickstart in the runner environment.
 2. Copy artifacts from runner output to customer-controlled storage.
 3. Build handoff package locally:
@@ -86,5 +86,5 @@ Boundary principle:
 
 ## Scope of this document
 This `HANDOFF.md` is intentionally customer-facing.
-It describes what is delivered, how it is verified, and how to continue in self-serve mode.
+It describes what is delivered, how it is verified, and how to continue in customer-managed mode.
 Internal operator procedures, private infrastructure layout, and internal roadmap content are out of scope.

@@ -1,4 +1,4 @@
-# Self-Serve Kubernetes Runner Runbook (Public)
+# Customer-Managed Kubernetes Runner Runbook (Public)
 
 Customer-managed runbook for a verify-first, read-only ModeKeeper runner lifecycle: install, collect artifacts, export/verify handoff, update, rollback, uninstall.
 

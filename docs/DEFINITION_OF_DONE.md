@@ -1,7 +1,7 @@
 # ModeKeeper — Definition of Done (Public)
 
 ## Purpose
-This document defines the public quality and completion bar for ModeKeeper as a verify-first, customer-operated capability.
+This document defines the public quality and completion bar for ModeKeeper as a verify-first, read-only assessment product with customer-managed execution.
 
 ## Public completion criteria
 - Verify-first behavior is clear and demonstrable: read-only assessment is the default path, with no implied cluster mutation.

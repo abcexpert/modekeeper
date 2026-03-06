@@ -1,10 +1,11 @@
 # ModeKeeper Public Roadmap
 
 ## Product direction (public)
-ModeKeeper is a verify-first operations product for SRE/MLOps/FinOps teams.
-The public path is read-only by default (`observe -> dry-run plan -> verify -> ROI -> export`) so teams can assess safety, controls, and value before discussing execution changes.
+ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk.
+The public path is strict read-only assessment (`observe -> dry-run plan -> verify -> ROI -> export`) so teams can assess safety, controls, and value before any implementation decision.
 
 Execution remains customer-managed: organizations run ModeKeeper in their own environment, with their own controls, identities, and change-management policy.
+Apply/implementation remains a separate gated path and is not part of the public assessment workflow.
 
 ## What is available now
 - Verify-first read-only assessment flow with reproducible evidence artifacts.
