@@ -4606,6 +4606,132 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def cmd_export_handoff_pack(args: argparse.Namespace) -> int:
+    in_dir = Path(args.input_dir)
+    out_dir = _ensure_out_dir(args.out)
+    started_at = _utc_now()
+
+    import shutil
+    import hashlib
+
+    tmp_dir = out_dir / "_bundle_tmp"
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    rc = cmd_export_bundle(argparse.Namespace(input_dir=str(in_dir), out=str(tmp_dir)))
+    if rc != 0:
+        return rc
+
+    bundle_manifest = tmp_dir / "bundle_manifest.json"
+    bundle_tar = tmp_dir / "bundle.tar.gz"
+    bundle_summary = tmp_dir / "bundle_summary.md"
+
+    handoff_manifest = out_dir / "handoff_manifest.json"
+    handoff_tar = out_dir / "handoff_pack.tar.gz"
+    handoff_summary = out_dir / "handoff_summary.md"
+    verify_path = out_dir / "HANDOFF_VERIFY.sh"
+    checksums_path = out_dir / "handoff_pack.checksums.sha256"
+    readme_path = out_dir / "README.md"
+
+    try:
+        handoff_manifest.write_bytes(bundle_manifest.read_bytes())
+        handoff_tar.write_bytes(bundle_tar.read_bytes())
+        handoff_summary.write_bytes(bundle_summary.read_bytes())
+    except FileNotFoundError as exc:
+        print(f"ERROR: expected bundle artifact missing: {exc}", file=sys.stderr)
+        return 2
+
+    verify_lines = [
+        "#!/usr/bin/env bash",
+        "set -Eeuo pipefail",
+        'cd "$(dirname "$0")"',
+        'TS="$(date -u +%Y%m%dT%H%M%SZ)"',
+        'TRANSCRIPT="HANDOFF_VERIFY_TRANSCRIPT_${TS}.txt"',
+        "{",
+        '  echo "ModeKeeper Handoff Verify"',
+        '  echo "ts=$TS"',
+        "  echo",
+        '  echo "== sha256 checksums =="',
+        "  sha256sum -c handoff_pack.checksums.sha256",
+        "  echo",
+        '  echo "== manifest embedded in tar matches handoff_manifest.json =="',
+        '  TAR_SHA="$(tar -xOf handoff_pack.tar.gz bundle_manifest.json | sha256sum | cut -d" " -f1)"',
+        '  FILE_SHA="$(sha256sum handoff_manifest.json | cut -d" " -f1)"',
+        '  echo "tar_manifest_sha256=$TAR_SHA"',
+        '  echo "handoff_manifest_sha256=$FILE_SHA"',
+        '  test "$TAR_SHA" = "$FILE_SHA"',
+        "  echo",
+        '  echo "OK"',
+        '} | tee "$TRANSCRIPT"',
+        "",
+    ]
+    verify_path.write_text("\n".join(verify_lines), encoding="utf-8")
+    verify_path.chmod(0o755)
+
+    readme_lines = [
+        "# ModeKeeper Handoff Pack",
+        "",
+        "This directory contains a customer-shareable, offline-first handoff pack.",
+        "",
+        "## Files",
+        "- handoff_pack.tar.gz",
+        "- handoff_manifest.json",
+        "- handoff_summary.md",
+        "- handoff_pack.checksums.sha256",
+        "- HANDOFF_VERIFY.sh",
+        "",
+        "## Verify (one command)",
+        "Run:",
+        "",
+        "```bash",
+        "bash HANDOFF_VERIFY.sh",
+        "```",
+        "",
+        "The script writes a transcript:",
+        "- HANDOFF_VERIFY_TRANSCRIPT_<UTC_TS>.txt",
+        "",
+        "Notes:",
+        "- Verification requires `sha256sum` and `tar` on the machine running verify.",
+        f"- Pack generated_at: {_format_utc(started_at)}",
+        "",
+    ]
+    readme_path.write_text("\n".join(readme_lines), encoding="utf-8")
+
+    def sha256_file(path: Path) -> str:
+        h = hashlib.sha256()
+        with path.open("rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    entries = {
+        "HANDOFF_VERIFY.sh": sha256_file(verify_path),
+        "README.md": sha256_file(readme_path),
+        "handoff_manifest.json": sha256_file(handoff_manifest),
+        "handoff_pack.tar.gz": sha256_file(handoff_tar),
+        "handoff_summary.md": sha256_file(handoff_summary),
+    }
+    lines = [f"{entries[name]}  {name}" for name in sorted(entries)]
+    checksums_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    print(
+        " ".join(
+            [
+                "handoff_ok=true",
+                f"manifest={handoff_manifest}",
+                f"tar={handoff_tar}",
+                f"summary={handoff_summary}",
+                f"checksums={checksums_path}",
+                f"verify={verify_path}",
+            ]
+        )
+    )
+    return 0
+
+
 def cmd_passport_templates(_args: argparse.Namespace) -> int:
     for name in passports_list_templates():
         print(name)
@@ -5714,6 +5840,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory",
     )
     export_bundle.set_defaults(func=cmd_export_bundle)
+
+    export_handoff = export_sub.add_parser(
+        "handoff-pack",
+        help="Build customer-verified handoff pack (tar.gz + sha256 + verify script)",
+    )
+    export_handoff.add_argument(
+        "--in",
+        dest="input_dir",
+        default="report",
+        help="Input root with latest artifacts",
+    )
+    export_handoff.add_argument(
+        "--out",
+        default="report/handoff_pack",
+        help="Output directory",
+    )
+    export_handoff.set_defaults(func=cmd_export_handoff_pack)
+
 
     chords = sub.add_parser("chords", help="Chord catalog utilities")
     chords_sub = chords.add_subparsers(dest="subcommand", required=True)
