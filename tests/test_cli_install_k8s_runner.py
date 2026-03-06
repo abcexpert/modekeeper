@@ -39,6 +39,7 @@ def test_cli_install_k8s_runner_generates_expected_bundle(tmp_path: Path, mk_pat
     assert "kind: ClusterRole" in rbac_yaml
     assert "kind: ClusterRoleBinding" in rbac_yaml
     assert "kind: Job" in job_yaml
+    assert "imagePullPolicy: Always" in job_yaml
     assert "mk quickstart --out /out/quickstart" in job_yaml
     assert "sleep 900" in job_yaml
     assert "MODEKEEPER_DONE" in job_yaml
@@ -55,3 +56,22 @@ def test_cli_install_k8s_runner_generates_expected_bundle(tmp_path: Path, mk_pat
     assert "kubectl delete -f 20_rbac.yaml" in rollback_sh
     assert "kubectl delete -f 10_serviceaccount.yaml" in rollback_sh
     assert "kubectl delete -f 00_namespace.yaml" in rollback_sh
+
+
+def test_cli_install_k8s_runner_sets_image_pull_policy_never(tmp_path: Path, mk_path: Path) -> None:
+    out_dir = tmp_path / "out_never"
+    cp = _run(
+        mk_path,
+        [
+            "install",
+            "k8s-runner",
+            "--out",
+            str(out_dir),
+            "--image-pull-policy",
+            "Never",
+        ],
+    )
+    assert cp.returncode == 0, cp.stderr
+
+    job_yaml = (out_dir / "30_job.yaml").read_text(encoding="utf-8")
+    assert "imagePullPolicy: Never" in job_yaml
