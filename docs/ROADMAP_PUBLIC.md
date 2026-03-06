@@ -29,7 +29,7 @@ References: `README.md`, `docs/WORKFLOW.md`, `docs/DISTRIBUTION_POLICY.md`, `doc
 - Licensed apply gates are implemented in CLI flow:
   - Commands: `mk license verify`, `mk k8s apply`, `mk closed-loop run --apply`
   - Gate signals in artifacts: `verify_ok`, `apply_blocked_reason`, `kill_switch_active`, `license_ok`
-  - See `docs/WORKFLOW.md`, `docs/CLI_REFERENCE.md`, `docs/INTERNAL_LICENSE_ISSUANCE.md`.
+  - See `docs/WORKFLOW.md`, `docs/CLI_REFERENCE.md`.
 
 ## Enterprise commercial next (priority)
 - License key management hardening: explicit `kid`, rotation workflow, verification allowlist, and optional trust chain mode for enterprise PKI interoperability.
