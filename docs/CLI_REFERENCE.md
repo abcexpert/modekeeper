@@ -2,9 +2,13 @@
 
 Source of truth: `src/modekeeper/cli.py` (`argparse`).
 
-## Entrypoint
-- Command: `mk`
+## Public execution model
+
+- Entrypoint: `mk`
 - Help: `mk --help`
+- ModeKeeper CLI is customer-managed: commands run in your environment with your kubeconfig, permissions, and runtime controls.
+- Recommended default is verify-first: collect evidence, inspect plans, and review artifacts before any licensed apply path.
+- `export handoff-pack` is the canonical review/handoff boundary for enterprise-facing artifact exchange.
 
 Top-level commands:
 - `eval`
@@ -93,7 +97,7 @@ Artifacts:
 - `k8s_plan.json`
 - `k8s_plan.kubectl.sh`
 - `explain.jsonl`
-- apply-requested path additionally emits `k8s_apply_latest.json` / `k8s_apply_<ts>.json` with gate/apply result
+- with `--apply`, apply reports are written only when gate checks pass (for example: valid license, verify status, and cluster authorization)
 
 ### `mk closed-loop watch`
 Flags:
@@ -119,7 +123,7 @@ Flags:
 Artifacts under `<out>/`:
 - per iteration: `iter_0001/`, `iter_0002/`, ... with same files as `closed-loop run`
 - aggregate: `watch_latest.json`, `watch_summary.md`
-- apply-requested path emits watch summary with blocked reason in public runtime
+- when `--apply` is requested but not authorized, reports remain explicit about blocked apply state
 
 ### `mk demo run`
 Flags:
@@ -202,6 +206,23 @@ Artifacts:
 - `bundle_manifest.json`
 - `bundle.tar.gz`
 - `bundle_summary.md`
+
+Use this command for generic bundle export and local packaging.
+
+### `mk export handoff-pack`
+Flags:
+- `--in` (stored as `input_dir`, default: `report`)
+- `--out` (default: `report/handoff_pack`)
+
+Artifacts:
+- `handoff_manifest.json`
+- `handoff_pack.tar.gz`
+- `handoff_summary.md`
+- `handoff_pack.checksums.sha256`
+- `HANDOFF_VERIFY.sh`
+- `README.md`
+
+Use this command as the canonical enterprise review/handoff pack boundary.
 
 ### `mk chords validate`
 Flags:
@@ -307,11 +328,24 @@ Artifacts:
 - `explain.jsonl`
 - `policy_bundle_latest.json`
 
-## Important env vars used by CLI
+Apply is a licensed, gated path. For enterprise review flows, prefer `k8s render` + `k8s verify` first, then proceed to apply only when controls are satisfied.
+
+## Public environment variables
+
 - `KUBECTL`: kubectl binary path override.
-- `KUBECONFIG`: kubeconfig path (doctor/preflight context checks).
-- `MODEKEEPER_GPU_HOUR_USD`, `MODEKEEPER_GPU_COUNT`: cost model overrides for value/opportunity math.
-- `MODEKEEPER_KILL_SWITCH`: absolute apply/mutate block when `1`.
-- `MODEKEEPER_LICENSE_PATH`: license path resolution fallback.
-- `MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH`: keyring file override for license verification.
-- `MODEKEEPER_INTERNAL_OVERRIDE`, `MODEKEEPER_PAID`: internal override path used in gating logic.
+- `KUBECONFIG`: kubeconfig path for cluster-scoped checks.
+- `MODEKEEPER_LICENSE_PATH`: default license path.
+- `MODEKEEPER_LICENSE_PUBLIC_KEYS_PATH`: public keyring path used in license verification.
+- `MODEKEEPER_KILL_SWITCH`: customer-side safety stop (`1` blocks mutate/apply paths).
+
+## Typical review-first sequence
+
+```bash
+mk observe --source file --path ./trace.jsonl --out ./report/observe
+mk closed-loop run --dry-run --observe-source file --observe-path ./trace.jsonl --out ./report/run
+mk k8s render --plan ./report/run/k8s_plan.json --out ./report/render
+mk k8s verify --plan ./report/run/k8s_plan.json --out ./report/verify
+mk export handoff-pack --in ./report --out ./report/handoff_pack
+```
+
+If your environment is licensed and approvals are complete, you can execute the apply path explicitly (for example `mk k8s apply` or `mk closed-loop run --apply`).
