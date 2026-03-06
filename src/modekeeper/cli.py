@@ -2236,13 +2236,17 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 
     verify_ok = verify_report.get("ok") if isinstance(verify_report, dict) else None
     verify_blocker = verify_report.get("verify_blocker") if isinstance(verify_report, dict) else None
+    read_only_patch_denied = _is_read_only_patch_denied_verify(verify_report)
     top_blocker: str | None = None
     if isinstance(verify_blocker, dict):
         blocker_kind = verify_blocker.get("kind")
         if isinstance(blocker_kind, str) and blocker_kind.strip():
             top_blocker = blocker_kind.strip()
+    if read_only_patch_denied and top_blocker == "rbac_denied":
+        top_blocker = None
     if top_blocker is None and verify_ok is False:
-        top_blocker = "verify_not_ok"
+        if not read_only_patch_denied:
+            top_blocker = "verify_not_ok"
 
     notes: list[str] = []
     if plan_path is None:
@@ -2253,6 +2257,8 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         notes.append("missing_k8s_verify_latest")
     elif verify_report is None:
         notes.append("invalid_k8s_verify_latest")
+    if read_only_patch_denied:
+        notes.append("verify_read_only_patch_not_permitted")
 
     finished_at = _utc_now()
     report = {
@@ -2262,7 +2268,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         "duration_s": int((finished_at - started_at).total_seconds()),
         "read_only": True,
         "inputs_root": str(inputs_root),
-        "ok": bool(verify_ok is True and top_blocker is None),
+        "ok": bool((verify_ok is True or read_only_patch_denied) and top_blocker is None),
         "top_blocker": top_blocker,
         "notes": notes,
         "k8s_namespace": plan_report.get("k8s_namespace") if isinstance(plan_report, dict) else None,
@@ -2325,12 +2331,18 @@ def cmd_eval(args: argparse.Namespace) -> int:
     verify_ok = verify_report.get("ok") if isinstance(verify_report, dict) else None
     top_blocker: str | None = None
     verify_blocker = verify_report.get("verify_blocker") if isinstance(verify_report, dict) else None
+    read_only_patch_denied = _is_read_only_patch_denied_verify(verify_report)
     if isinstance(verify_blocker, dict):
         kind = verify_blocker.get("kind")
         if isinstance(kind, str) and kind.strip():
             top_blocker = kind.strip()
+    if read_only_patch_denied and top_blocker == "rbac_denied":
+        top_blocker = None
     if top_blocker is None and verify_ok is False:
-        top_blocker = "verify_not_ok"
+        if not read_only_patch_denied:
+            top_blocker = "verify_not_ok"
+    if read_only_patch_denied:
+        notes.append("verify_read_only_patch_not_permitted")
 
     finished_at = _utc_now()
     report = {
@@ -4035,6 +4047,25 @@ def _read_json_best_effort(path: Path) -> tuple[dict | None, str | None]:
     if not isinstance(payload, dict):
         return None, "invalid_json_shape"
     return payload, None
+
+
+def _is_read_only_patch_denied_verify(verify_report: dict | None) -> bool:
+    if not isinstance(verify_report, dict):
+        return False
+    if str(verify_report.get("mode") or "").strip() != "plan_only":
+        return False
+    verify_blocker = verify_report.get("verify_blocker")
+    if not isinstance(verify_blocker, dict):
+        return False
+    if str(verify_blocker.get("kind") or "").strip() != "rbac_denied":
+        return False
+
+    diagnostics = verify_report.get("diagnostics")
+    if not isinstance(diagnostics, dict):
+        return False
+    auth_can_i_get = diagnostics.get("auth_can_i_get_deployments")
+    auth_can_i_patch = diagnostics.get("auth_can_i_patch_deployments")
+    return auth_can_i_get is True and auth_can_i_patch is False
 
 
 def _report_bool(value: bool) -> str:
