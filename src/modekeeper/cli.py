@@ -4732,6 +4732,263 @@ def cmd_export_handoff_pack(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def cmd_support_bundle(args: argparse.Namespace) -> int:
+    in_dir = Path(args.input_dir)
+    out_value = getattr(args, "out", None)
+    if not isinstance(out_value, str) or not out_value.strip():
+        out_value = str(Path("report") / f"support_bundle_{_utc_now().strftime('%Y%m%dT%H%M%SZ')}")
+    out_dir = _ensure_out_dir(out_value)
+    started_at = _utc_now()
+
+    import hashlib
+    import shutil
+    import platform
+
+    # Staging: redacted copy of selected inputs, preserving relative paths.
+    redacted_root = out_dir / "_redacted"
+    shutil.rmtree(redacted_root, ignore_errors=True)
+    redacted_root.mkdir(parents=True, exist_ok=True)
+
+    # Select known artifacts similarly to export bundle (latest + siblings).
+    notes: list[str] = []
+    include_paths: dict[str, Path] = {}
+    known_artifacts = [
+        "doctor_latest.json",
+        "preflight_latest.json",
+        "eval_latest.json",
+        "watch_latest.json",
+        "roi_latest.json",
+    ]
+    for name in known_artifacts:
+        found = _find_first_named(in_dir, name)
+        if found is None:
+            notes.append(f"missing_{name}")
+            continue
+        include_paths[found.resolve().as_posix()] = found
+        # companion files
+        generic_summary_path = found.parent / "summary.md"
+        if generic_summary_path.exists() and generic_summary_path.is_file():
+            include_paths[generic_summary_path.resolve().as_posix()] = generic_summary_path
+        explain_path = found.parent / "explain.jsonl"
+        if explain_path.exists() and explain_path.is_file():
+            include_paths[explain_path.resolve().as_posix()] = explain_path
+
+    # Deterministic ordering by rel_path
+    selected = sorted(include_paths.values(), key=lambda item: item.relative_to(in_dir).as_posix())
+
+    # Redaction rules (deterministic):
+    # - JSON/JSONL: redact sensitive keys recursively
+    # - text: regex-based redaction of common secret patterns (Bearer, token=, password=, etc.)
+    import json
+    import re
+
+    redacted_key_set = {
+        "token",
+        "access_token",
+        "refresh_token",
+        "password",
+        "passwd",
+        "secret",
+        "client_secret",
+        "api_key",
+        "apikey",
+        "authorization",
+        "cookie",
+        "private_key",
+        "access_key",
+    }
+
+    bearer_re = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9\-\._~\+\/]+=*")
+    kv_re = re.compile(r"(?i)\b(token|password|passwd|secret|api[_-]?key|authorization|cookie)\b\s*[:=]\s*([^\s\"']+)")
+    b64_re = re.compile(r"^[A-Za-z0-9+/=]{32,}$")
+
+    def _redact_text(text: str) -> tuple[str, int]:
+        n = 0
+        text2, c = bearer_re.subn("Bearer <REDACTED>", text)
+        n += c
+        text3, c = kv_re.subn(lambda m: f"{m.group(1)}=<REDACTED>", text2)
+        n += c
+        return text3, n
+
+    def _redact_obj(obj) -> tuple[object, int]:
+        n = 0
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if isinstance(k, str) and k.lower() in redacted_key_set:
+                    out[k] = "<REDACTED>"
+                    n += 1
+                else:
+                    vv, nn = _redact_obj(v)
+                    out[k] = vv
+                    n += nn
+            return out, n
+        if isinstance(obj, list):
+            out_list = []
+            for item in obj:
+                vv, nn = _redact_obj(item)
+                out_list.append(vv)
+                n += nn
+            return out_list, n
+        if isinstance(obj, str):
+            if bearer_re.search(obj):
+                return bearer_re.sub("Bearer <REDACTED>", obj), 1
+            if b64_re.match(obj):
+                # conservative: redact long base64-like blobs
+                return "<REDACTED>", 1
+            return obj, 0
+        return obj, 0
+
+    def _sha256_bytes(data: bytes) -> str:
+        h = hashlib.sha256()
+        h.update(data)
+        return h.hexdigest()
+
+    file_reports: list[dict] = []
+    include_rel_paths: list[str] = []
+
+    for src in selected:
+        try:
+            rel = src.relative_to(in_dir).as_posix()
+        except ValueError:
+            # outside input root: skip (deterministic)
+            notes.append(f"skip_outside_root:{src.name}")
+            continue
+
+        dst = redacted_root / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+
+        raw = src.read_bytes()
+        redactions = 0
+
+        if src.suffix.lower() == ".json":
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+                obj2, redactions = _redact_obj(obj)
+                out = (json.dumps(obj2, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+                dst.write_bytes(out)
+            except Exception:
+                # fallback to text redaction
+                txt, redactions = _redact_text(raw.decode("utf-8", errors="replace"))
+                out = (txt + ("" if txt.endswith("\n") else "\n")).encode("utf-8")
+                dst.write_bytes(out)
+        elif src.suffix.lower() == ".jsonl":
+            txt = raw.decode("utf-8", errors="replace").splitlines()
+            out_lines: list[str] = []
+            for line in txt:
+                try:
+                    obj = json.loads(line)
+                    obj2, nn = _redact_obj(obj)
+                    redactions += nn
+                    out_lines.append(json.dumps(obj2, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+                except Exception:
+                    red_line, nn = _redact_text(line)
+                    redactions += nn
+                    out_lines.append(red_line)
+            dst.write_text("\n".join(out_lines) + "\n", encoding="utf-8")
+        else:
+            txt, redactions = _redact_text(raw.decode("utf-8", errors="replace"))
+            dst.write_text(txt + ("" if txt.endswith("\n") else "\n"), encoding="utf-8")
+
+        include_rel_paths.append(rel)
+
+        redacted_bytes = dst.read_bytes()
+        file_reports.append(
+            {
+                "rel_path": rel,
+                "sha256": _sha256_bytes(redacted_bytes),
+                "size_bytes": len(redacted_bytes),
+                "redactions": int(redactions),
+                "kind": _bundle_kind(rel),
+            }
+        )
+
+    # Add a small environment fingerprint (safe-only).
+    env_path = redacted_root / "environment.txt"
+    env_lines = [
+        f"tool_version={MK_VERSION}",
+        f"python_version={sys.version.replace(chr(10), ' ')}",
+        f"platform={platform.platform()}",
+    ]
+    env_path.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
+    include_rel_paths.append("environment.txt")
+    env_bytes = env_path.read_bytes()
+    file_reports.append(
+        {
+            "rel_path": "environment.txt",
+            "sha256": _sha256_bytes(env_bytes),
+            "size_bytes": len(env_bytes),
+            "redactions": 0,
+            "kind": "text",
+        }
+    )
+
+    run_seed = "\n".join([f"{it['rel_path']}:{it['sha256']}" for it in sorted(file_reports, key=lambda x: x["rel_path"])]) or "no-files"
+    run_id = hashlib.sha256(run_seed.encode("utf-8")).hexdigest()
+
+    manifest = {
+        "schema_version": "support_bundle.v0",
+        "created_at": _format_utc(started_at),
+        "tool_version": MK_VERSION,
+        "run_id": run_id,
+        "inputs_root": str(in_dir),
+        "files": sorted(file_reports, key=lambda x: x["rel_path"]),
+        "notes": sorted(notes),
+    }
+
+    manifest_path = out_dir / "support_bundle_manifest.json"
+    tar_path = out_dir / "support_bundle.tar.gz"
+    summary_path = out_dir / "support_bundle_summary.md"
+
+    try:
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        # Build tar with deterministic metadata (reuse existing helper).
+        files_for_tar = [{"rel_path": it["rel_path"], "sha256": it["sha256"], "schema_version": "file.v0"} for it in manifest["files"]]
+        _build_bundle_tar(
+            tar_path=tar_path,
+            manifest_path=manifest_path,
+            manifest_rel_path="support_bundle_manifest.json",
+            files=files_for_tar,
+            in_dir=redacted_root,
+        )
+
+        total_redactions = sum(int(it.get("redactions") or 0) for it in manifest["files"])
+        summary_lines = [
+            "# Support bundle",
+            "ok: true",
+            f"inputs_root: {in_dir}",
+            f"files_count: {len(manifest['files'])}",
+            f"total_redactions: {total_redactions}",
+            f"manifest: {manifest_path}",
+            f"tar: {tar_path}",
+        ]
+        summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+    except Exception as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+    # Clean staging by default; keep only published artifacts.
+    shutil.rmtree(redacted_root, ignore_errors=True)
+
+    print(
+        " ".join(
+            [
+                "support_bundle_ok=true",
+                f"manifest={manifest_path}",
+                f"tar={tar_path}",
+                f"summary={summary_path}",
+                f"files={len(manifest['files'])}",
+            ]
+        )
+    )
+    return 0
+
+
 def cmd_passport_templates(_args: argparse.Namespace) -> int:
     for name in passports_list_templates():
         print(name)
@@ -5858,6 +6115,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     export_handoff.set_defaults(func=cmd_export_handoff_pack)
 
+
+    
+    support_bundle = sub.add_parser("support-bundle", help="Build sanitized support bundle (redacted)")
+    support_bundle.add_argument(
+        "--in",
+        dest="input_dir",
+        default="report",
+        help="Input root with latest artifacts",
+    )
+    support_bundle.add_argument(
+        "--out",
+        help="Output directory (default: ./report/support_bundle_<UTC ts>/, ts=YYYYMMDDTHHMMSSZ)",
+    )
+    support_bundle.set_defaults(func=cmd_support_bundle)
 
     chords = sub.add_parser("chords", help="Chord catalog utilities")
     chords_sub = chords.add_subparsers(dest="subcommand", required=True)
