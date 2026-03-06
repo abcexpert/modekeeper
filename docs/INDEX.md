@@ -13,6 +13,9 @@ Kubernetes/GPU cost and risk assessment, customer-managed execution, and change-
 ## Verify-first assessment (strict read-only path)
 - [Workflow](WORKFLOW.md)
 - [Snapshot](SNAPSHOT.md)
+- [Pattern Catalog v1](PATTERN_CATALOG.md)
+- [Observability Contract v1](OBSERVABILITY_CONTRACT.md)
+- [Forced Opportunity Scenarios v1](FORCED_OPPORTUNITY_SCENARIOS.md)
 - [K8s customer-managed runner runbook](K8S_RUNNER_SELF_SERVE.md)
 
 ## Customer-managed execution and handoff

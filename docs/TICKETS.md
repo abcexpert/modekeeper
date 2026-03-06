@@ -104,3 +104,15 @@ This file is the public-facing roadmap/status ledger for ModeKeeper's verify-fir
     - docs:
     - artifacts:
     - commit:
+
+- ID: MK-138
+  Title: Observable pattern detection quality + insufficient-evidence classification + forced-opportunity proofs
+  Status: TODO
+  Acceptance criteria:
+    - Public Pattern Catalog defines observable Kubernetes/GPU cost and risk patterns with explicit outcome classes.
+    - Observability Contract defines mandatory/optional evidence inputs and explicit insufficient-evidence reporting fields.
+    - Forced Opportunity Scenarios define customer-managed proof scenarios expected to produce non-zero signal/proposal outcomes when evidence quality is sufficient.
+  Public evidence stub:
+    - docs: `docs/PATTERN_CATALOG.md`, `docs/OBSERVABILITY_CONTRACT.md`, `docs/FORCED_OPPORTUNITY_SCENARIOS.md`
+    - artifacts:
+    - commit:
