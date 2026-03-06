@@ -1,41 +1,52 @@
 # Docs Index
 
-Navigation hub for current project documentation.
+Public documentation hub for buyer-facing evaluation, verify-first read-only assessment, and customer-managed execution.
 
-## Start here
+## Start here (public evaluation)
+- [Quickstart](QUICKSTART.md)
+- [Getting started](GETTING_STARTED.md)
 - [Buyer journey](BUYER_JOURNEY.md)
 - [Product overview](product.md)
-- [Quickstart](QUICKSTART.md)
-- [Self-serve k8s runner runbook](K8S_RUNNER_SELF_SERVE.md)
-- [Developer guide](DEV_GUIDE.md)
-- [CLI reference](CLI_REFERENCE.md)
 - [Architecture](ARCHITECTURE.md)
 
-## Delivery and operations
+## Verify-first assessment (read-only first)
 - [Workflow](WORKFLOW.md)
+- [Snapshot](SNAPSHOT.md)
 - [Apply spec](APPLY_SPEC.md)
-- [Release process](RELEASE_PROCESS.md)
-- [Release script](../scripts/release_public.sh)
-- [Procurement pack](PROCUREMENT_PACK.md)
+- [K8s self-serve runner runbook](K8S_RUNNER_SELF_SERVE.md)
+
+## Customer-managed execution and handoff
+- [Handoff guide](HANDOFF.md)
 - [Buyer proof pack](BUYER_PROOF_PACK.md)
 - [Proof packs overview](PROOF_PACKS.md)
+
+## Enterprise review and procurement-safe entrypoints
+- [Enterprise evaluation](ENTERPRISE_EVALUATION.md)
+- [Procurement pack](PROCUREMENT_PACK.md)
+- [Buyer request checklist](BUYER_REQUEST_CHECKLIST.md)
 - [10-minute buyer script](BUYER_10MIN.md)
 
-## Security and compliance
+## Security and compliance evidence
 - [Security posture](SECURITY_POSTURE.md)
 - [Security Q&A](SECURITY_QA.md)
 - [Threat model](THREAT_MODEL.md)
 - [Compliance matrix](COMPLIANCE_MATRIX.md)
+- [Distribution policy](DISTRIBUTION_POLICY.md)
 
-## Product internals
+## Product model and reference
 - [Chords](CHORDS.md)
 - [Passports](PASSPORTS.md)
+- [Custom passports](CUSTOM_PASSPORTS.md)
 - [Safety model](SAFETY_MODEL.md)
 - [Record/replay](RECORD_REPLAY.md)
 - [SaaS seams](SAAS_SEAMS.md)
-
-## Planning and backlog
+- [CLI reference](CLI_REFERENCE.md)
+- [CLI contracts](CLI_CONTRACTS.md)
 - [Project map](PROJECT_MAP.md)
+
+## Public release and status
+- [Release policy](RELEASE.md)
+- [Release process](RELEASE_PROCESS.md)
+- [Public roadmap](ROADMAP_PUBLIC.md)
 - [Status](STATUS.md)
 - [Tickets](TICKETS.md)
-- [TODO backlog](TODO_BACKLOG.md)
