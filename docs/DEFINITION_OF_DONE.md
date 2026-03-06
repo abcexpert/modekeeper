@@ -1,26 +1,22 @@
-# ModeKeeper — MVP v0 Definition of Done
+# ModeKeeper — Definition of Done (Public)
 
-## Scope
-- MVP v0 covers plan-only closed-loop runs, k8s render/verify, and paid apply guarded by verify-ok and safety gates.
-- Reports and artifacts follow the v0 report contract and are written deterministically.
-- Documentation and smoke workflows are present for local and kind-based validation.
+## Purpose
+This document defines the public quality and completion bar for ModeKeeper as a verify-first, customer-operated capability.
 
-## Non-goals
-- Multi-cluster orchestration or advanced scheduling.
-- UI/dashboard, hosted service, or multi-tenant security model.
-- Automatic remediation beyond the closed-loop apply path.
+## Public completion criteria
+- Verify-first behavior is clear and demonstrable: read-only assessment is the default path, with no implied cluster mutation.
+- Results are reproducible and auditable through stable, documented report artifacts suitable for review workflows.
+- Public docs present a consistent operator model: customers run ModeKeeper in their own environment and control all execution boundaries.
+- Public guidance supports enterprise review, including security/procurement conversations and expected deployment responsibility boundaries.
+- The handoff direction is change-ready: teams can move from assessment to controlled execution using documented public contracts and workflows.
+- Public-facing examples are coherent, minimal, and aligned with showroom expectations rather than internal delivery mechanics.
 
-## Checklist
-- [ ] Plan-only default: `mk closed-loop run` (no `--apply`) never mutates the cluster; it only writes plan/verify artifacts.
-- [ ] `mk k8s render` and `mk k8s verify` accept a valid plan and write `*_latest.json` reports plus timestamped reports.
-- [ ] Paid apply is gated: `MODEKEEPER_PAID=1` and `verify ok==true` are required, and `MODEKEEPER_KILL_SWITCH=1` blocks apply.
-- [ ] Report contract holds for all generated reports: `schema_version == "v0"` and `duration_s` is an int.
-- [ ] CLI contracts and workflows are documented in `docs/CLI_CONTRACTS.md` and `docs/WORKFLOW.md`.
-- [ ] `pytest -q` passes in the repo environment.
+## Out of scope for this document
+- Internal implementation details, private delivery sequencing, or internal release choreography.
+- Vendor-operated runtime assumptions or managed-operator implications.
+- Internal engineering checklists, low-level test gates, or private licensing/process criteria.
 
-## Acceptance smoke commands (kind)
-- `./scripts/kind-bootstrap.sh`
-- `./scripts/dev-shell.sh`
-- `./scripts/e2e-smoke-kind.sh`
-- `MODEKEEPER_PAID=1 MODEKEEPER_KILL_SWITCH=0 ./scripts/e2e-apply-kind.sh`
-- `pytest -q`
+## Quality bar for public showroom readiness
+- A new reader can understand what “done” means without access to internal context.
+- The document reinforces safe adoption: assess first, execute under customer control, and review outputs before change.
+- Language is procurement-safe and enterprise-neutral, with no dependency on private infrastructure or internal process ownership.
