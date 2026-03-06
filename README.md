@@ -77,6 +77,7 @@ Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
 - Enterprise evaluation: [`docs/ENTERPRISE_EVALUATION.md`](docs/ENTERPRISE_EVALUATION.md)
 - Current project status: [`docs/STATUS.md`](docs/STATUS.md)
 - Workflow details: [`docs/WORKFLOW.md`](docs/WORKFLOW.md)
+- Self-serve k8s runner runbook: [`docs/K8S_RUNNER_SELF_SERVE.md`](docs/K8S_RUNNER_SELF_SERVE.md)
 - Distribution boundary policy: [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md)
 
 ## 60-second quickstart
