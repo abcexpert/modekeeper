@@ -15,6 +15,8 @@
 - **Paid:** one-shot `closed-loop run --apply` (рекомендуется), gated: kill-switch + license + **verify-ok**.
 - **Runner model:** customer-managed k8s runner (self-serve install/upgrade/rollback/uninstall).
 - **Export model:** verified handoff/export (`tar.gz` + `sha256` + verification transcript/script).
+- **Self-serve runner e2e:** confirmed end-to-end via abc2 on kind after PR #63 (main commit `dd87698`): runner started, `MODEKEEPER_DONE` observed, `/out/quickstart` copied, `mk export handoff-pack` + `HANDOFF_VERIFY.sh` returned `OK`.
+- **Observation:** quickstart outcome reported `top_blocker=rbac_denied`, while handoff-pack still succeeded.
 
 ## 0.1) Canonical kind/e2e bootstrap
 - Step 0: `./scripts/kind-bootstrap.sh`
