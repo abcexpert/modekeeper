@@ -1031,7 +1031,6 @@
     - tests/test_mk082_license_verify.py
     - tests/test_mk086_license_kid_and_rotation.py
     - src/modekeeper/license/verify.py
-    - docs/INTERNAL_LICENSE_ISSUANCE.md
     - artifact contract: `license_verify_latest.json` includes
       `license_ok`, `kid`, `issuer`, `expiry`, `entitlements`, `reason_code`, `failure_code`, `failure_detail`
 
@@ -1052,7 +1051,6 @@
     - src/modekeeper/cli.py
     - tests/test_mk110_trust_chain_verify.py
     - docs/WORKFLOW.md
-    - docs/INTERNAL_LICENSE_ISSUANCE.md
     - verification: `pytest -q tests/test_mk110_trust_chain_verify.py tests/test_mk082_license_verify.py tests/test_mk086_license_kid_and_rotation.py`
 
 - ID: MK-087
