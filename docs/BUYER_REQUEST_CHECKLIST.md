@@ -1,6 +1,6 @@
 # Buyer Request Checklist (Pilot Intake) — ModeKeeper
 
-ModeKeeper helps Platform/SRE/FinOps teams quantify and improve Kubernetes efficiency across:
+ModeKeeper helps Platform/SRE/FinOps teams assess Kubernetes/GPU cost and risk across:
 
 **observe → evaluate/ROI → plan/verify → (optional) apply**
 

@@ -4,7 +4,8 @@ Source of truth: `src/modekeeper/cli.py`.
 
 This document defines public CLI/report contracts for enterprise-safe review.
 Execution is customer-managed: commands run in your environment, with your kubeconfig and permissions.
-Default posture is verify-first and read-only.
+Default posture is verify-first and strict read-only assessment.
+Public assessment path does not perform cluster mutation.
 
 ## Public command contracts
 
@@ -21,7 +22,7 @@ Default posture is verify-first and read-only.
 ## Verify-first and licensed apply boundary
 
 - `--dry-run` and read-only commands are the default contract for assessment and review.
-- `--apply` is a gated path requiring valid runtime preconditions (including license and verify checks).
+- `--apply` is a separate gated path requiring valid runtime preconditions (including license and verify checks).
 - When apply is not authorized, reports remain explicit (`apply_blocked_reason`, `k8s_apply_latest.json`) and no mutation is performed.
 
 ## Export/handoff boundary

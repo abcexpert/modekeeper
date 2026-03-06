@@ -1,12 +1,12 @@
 # ModeKeeper Public Snapshot
 
-This document is a public-facing status and positioning snapshot for ModeKeeper.
+This document is a public-facing positioning and status snapshot for ModeKeeper.
 It is intentionally limited to buyer-safe, enterprise-review-safe context.
 
 ## Product position (public)
 
-ModeKeeper is positioned as a verify-first Kubernetes/GPU operations product.
-The default public workflow is read-only assessment before any mutation decision.
+ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk, with customer-managed execution and a change-ready handoff pack for enterprise review.
+The default public workflow stays in strict read-only assessment before any mutation decision.
 
 Core positioning pillars:
 - verify-first
@@ -20,8 +20,8 @@ Core positioning pillars:
 
 - Public distribution is available via GitHub and PyPI (`modekeeper`).
 - Public docs are aligned around safe evaluation and evidence-first decisioning.
-- Canonical public workflow remains read-only: `observe -> plan -> verify -> export`.
-- Apply/mutate is a separately gated licensed path and is not baseline public evaluation.
+- Canonical public workflow remains strict read-only assessment: `observe -> plan -> verify -> export`.
+- Apply/mutate is a separate licensed and gated path and is not baseline public evaluation.
 - Runtime execution boundary remains customer-managed in customer environments.
 
 ## Canonical public workflow (high-level)

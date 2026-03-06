@@ -2,8 +2,9 @@
 
 Buyer-facing 20-minute discovery call script for ModeKeeper.
 
-Positioning: ModeKeeper is **verify-first** for Kubernetes efficiency:
-**observe -> ROI -> plan/verify -> optional apply**.
+Positioning: ModeKeeper is a **verify-first, read-only assessment** for
+Kubernetes/GPU cost and risk, with **customer-managed execution** and a
+**change-ready handoff pack** for enterprise review.
 
 Related buyer docs:
 - [docs/BUYER_10MIN.md](BUYER_10MIN.md)
@@ -26,16 +27,16 @@ Use this script:
 
 > Thanks for joining. I will keep this practical and short.  
 > In 20 minutes, we should answer three things:  
-> 1) Is there measurable Kubernetes efficiency upside for your team?  
+> 1) Is there measurable Kubernetes/GPU cost and risk upside for your team?  
 > 2) Can we prove value safely in read-only mode first?  
-> 3) Do we have a clear pilot plan with owners and dates?  
+> 3) Do we have a clear pilot and handoff plan with owners and dates?  
 > ModeKeeper works verify-first: we observe current behavior, quantify ROI,
-> produce a plan and verification evidence, and only discuss apply if you
-> explicitly want that later.
+> produce a plan and verification evidence, and deliver a change-ready handoff
+> pack for enterprise review. Apply/implementation is a separate gated path.
 
 ## 2) Agenda (say this at minute 1)
 
-> Proposed agenda: quick context from you, your top efficiency goals and guardrails, fit check, then a concrete pilot proposal and next steps. Sound good?
+> Proposed agenda: quick context from you, your top cost/risk goals and guardrails, fit check, then a concrete pilot proposal and next steps. Sound good?
 
 ## 3) Discovery questions (minutes 2-10)
 
@@ -64,7 +65,7 @@ Use a simple pass/hold decision.
 Pass now if all are true:
 - Clear owner from Platform/SRE and a business stakeholder.
 - Defined pilot scope (at least one cluster/namespace group).
-- A measurable goal (cost, efficiency, stability, or incident reduction).
+- A measurable goal (cost, risk, stability, or incident reduction).
 - Read-only data path is available.
 - Timeline urgency within this quarter.
 
@@ -109,10 +110,10 @@ Use this structure live:
 2. Duration: 14 days total.
 3. Phase 1 (Days 1-5): Observe + baseline + initial ROI estimate.
 4. Phase 2 (Days 6-10): Plan/verify package with workload-level recommendations and safety checks.
-5. Phase 3 (Days 11-14): Decision checkpoint; optional controlled apply planning only if approved.
+5. Phase 3 (Days 11-14): Decision checkpoint and change-ready handoff pack for enterprise review.
 6. Deliverables: baseline summary, ROI model + assumptions, plan/verify
    artifacts, decision readout.
-7. Success metrics: target efficiency or spend reduction range, plus stability
+7. Success metrics: target spend reduction/risk reduction range, plus stability
    guardrail metrics.
 
 ## 7) Next steps (minutes 18-20)
@@ -127,7 +128,7 @@ Close with explicit commitments:
 
 ## 8) Follow-up email template (short)
 
-Subject: ModeKeeper pilot proposal - verify-first Kubernetes efficiency
+Subject: ModeKeeper pilot proposal - verify-first Kubernetes/GPU cost and risk assessment
 
 Hi {{Name}},
 
@@ -143,7 +144,7 @@ Thanks for the call today. Recap of what we aligned:
 Proposed pilot (14 days):
 - Observe baseline and quantify ROI
 - Produce plan/verify evidence package
-- Optional apply planning only with explicit approval
+- Prepare change-ready handoff pack for enterprise review
 
 Buyer references:
 - [docs/BUYER_REQUEST_CHECKLIST.md](BUYER_REQUEST_CHECKLIST.md)

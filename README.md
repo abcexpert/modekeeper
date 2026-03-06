@@ -3,7 +3,8 @@
 [![CI](https://github.com/abcexpert/modekeeper/actions/workflows/ci.yml/badge.svg)](https://github.com/abcexpert/modekeeper/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/modekeeper.svg?cacheSeconds=900)](https://pypi.org/project/modekeeper/)
 
-ModeKeeper is a verify-first read-only assessment for Kubernetes/GPU cost and risk, with a change-ready handoff pack for enterprise review. Execution stays customer-managed; apply is licensed and hard-gated.
+ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk, with customer-managed execution and a change-ready handoff pack for enterprise review.
+Apply/implementation is a separate licensed and gated path, not part of the public assessment path.
 
 ## Start here (10 minutes)
 

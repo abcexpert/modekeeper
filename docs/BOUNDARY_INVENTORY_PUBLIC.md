@@ -1,7 +1,7 @@
 # Public Boundary Inventory (docs)
 
 Scope: `README.md`, top-level `docs/*.md`, and `docs/evidence/**`.
-Goal: keep public repo as showroom/stub + buyer/procurement evidence; exclude internal-only ops/commercial internals.
+Goal: keep public repo as a verify-first, read-only assessment showroom + buyer/procurement evidence; exclude internal-only ops/commercial internals.
 
 | Path | Decision | Rationale |
 |---|---|---|

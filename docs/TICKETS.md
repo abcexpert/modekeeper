@@ -1,6 +1,6 @@
 # Tickets (Public)
 
-This file is the public-facing roadmap/status ledger for ModeKeeper showroom and evaluation surfaces.
+This file is the public-facing roadmap/status ledger for ModeKeeper's verify-first, read-only assessment surface.
 
 ## Public boundary for this ledger
 - Keep customer-safe, verify-first roadmap items only.
@@ -12,9 +12,9 @@ This file is the public-facing roadmap/status ledger for ModeKeeper showroom and
 - `TODO` - planned public-facing work.
 - `DONE` - shipped and reflected in public docs/CLI surface.
 
-- EPIC: Customer-managed verify-first operations and handoff
+- EPIC: Customer-managed verify-first assessment and handoff
   Goal:
-    - Maintain a read-only-first evaluation path (`observe -> plan -> verify -> export`) and clear handoff evidence for enterprise review.
+    - Maintain a strict read-only evaluation path (`observe -> plan -> verify -> export`) and clear handoff evidence for enterprise review.
 
 - ID: MK-130
   Title: mk doctor (public-safe environment/readiness checks + actionable output)
@@ -66,10 +66,10 @@ This file is the public-facing roadmap/status ledger for ModeKeeper showroom and
     - references: `docs/HANDOFF.md`, `docs/SNAPSHOT.md`
 
 - ID: MK-134
-  Title: Self-serve runbook lifecycle (install/upgrade/rollback/uninstall + offline notes)
+  Title: Customer-managed runbook lifecycle (install/upgrade/rollback/uninstall + offline notes)
   Status: DONE
   Public outcome:
-    - A single customer-facing lifecycle runbook exists for self-serve operation.
+    - A single customer-facing lifecycle runbook exists for customer-managed operation.
     - Offline/air-gapped handling is documented at public guidance level.
   Public evidence:
     - docs: `docs/K8S_RUNNER_SELF_SERVE.md`, `docs/INDEX.md`, `docs/README.md`

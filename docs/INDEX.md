@@ -1,24 +1,27 @@
 # Docs Index
 
-Public documentation hub for buyer-facing evaluation, verify-first read-only assessment, and customer-managed execution.
+Public documentation hub for ModeKeeper's verify-first, read-only assessment positioning:
+Kubernetes/GPU cost and risk assessment, customer-managed execution, and change-ready handoff for enterprise review.
 
-## Start here (public evaluation)
+## Start here (public assessment)
 - [Quickstart](QUICKSTART.md)
 - [Getting started](GETTING_STARTED.md)
 - [Buyer journey](BUYER_JOURNEY.md)
 - [Product overview](product.md)
 - [Architecture](ARCHITECTURE.md)
 
-## Verify-first assessment (read-only first)
+## Verify-first assessment (strict read-only path)
 - [Workflow](WORKFLOW.md)
 - [Snapshot](SNAPSHOT.md)
-- [Apply spec](APPLY_SPEC.md)
-- [K8s self-serve runner runbook](K8S_RUNNER_SELF_SERVE.md)
+- [K8s customer-managed runner runbook](K8S_RUNNER_SELF_SERVE.md)
 
 ## Customer-managed execution and handoff
 - [Handoff guide](HANDOFF.md)
 - [Buyer proof pack](BUYER_PROOF_PACK.md)
 - [Proof packs overview](PROOF_PACKS.md)
+
+## Gated apply/implementation (separate path)
+- [Apply spec](APPLY_SPEC.md)
 
 ## Enterprise review and procurement-safe entrypoints
 - [Enterprise evaluation](ENTERPRISE_EVALUATION.md)

@@ -5,7 +5,7 @@
 - GitHub: `abcexpert/modekeeper`
 
 ## Public positioning
-ModeKeeper public repo is a verify-first read-only assessment for Kubernetes/GPU cost and risk, with a change-ready handoff pack for enterprise review.
+ModeKeeper public repo is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk, with customer-managed execution and a change-ready handoff pack for enterprise review.
 
 ## For whom
 
