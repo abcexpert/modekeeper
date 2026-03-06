@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modekeeper"
-version = "0.1.31"
-description = "ModeKeeper: verify-first, customer-safe read-only agent; apply is licensed and gated"
+version = "0.1.32"
+description = "ModeKeeper: verify-first, read-only assessment for Kubernetes/GPU cost and risk"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
 
