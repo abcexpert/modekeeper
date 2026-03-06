@@ -1,11 +1,11 @@
-# Self-Serve k8s Runner Runbook
+# Self-Serve Kubernetes Runner Runbook (Public)
 
-Customer-managed runbook for read-only ModeKeeper runner lifecycle: install, collect artifacts, export/verify handoff, upgrade, rollback, uninstall.
+Customer-managed runbook for a verify-first, read-only ModeKeeper runner lifecycle: install, collect artifacts, export/verify handoff, update, rollback, uninstall.
 
 ## Scope and assumptions
 
 - Customer-owned Kubernetes cluster and `kubectl` access.
-- `mk` CLI is installed on the workstation where manifests/export are prepared.
+- `mk` CLI is installed where manifests and exports are prepared.
 - Runner image is available to the cluster runtime.
 - Default runner command is read-only:
   - `mk quickstart --out /out/quickstart; echo MODEKEEPER_DONE; sleep 900`
@@ -32,26 +32,22 @@ kubectl -n "$NS" get job "$JOB"
 kubectl -n "$NS" logs job/"$JOB" | tail -n 50
 ```
 
-Primary success criterion (preferred):
+Primary success criterion:
 
 ```bash
 kubectl -n "$NS" logs job/"$JOB" | grep -F "MODEKEEPER_DONE"
 ```
 
-Secondary operational checks (optional, not primary):
+Optional secondary checks:
 
 ```bash
 kubectl -n "$NS" get job "$JOB" -o jsonpath='{.status.succeeded}'; echo
 kubectl -n "$NS" get pods -l job-name="$JOB" -o wide
 ```
 
-Note:
-- Do not rely on `kubectl wait ... --for=jsonpath='{.status.phase}'=Running` as the main success signal for this Job.
-- `MODEKEEPER_DONE` in logs is the reliable completion marker for the runner quickstart flow.
-
 ## 2) Local kind image note
 
-If using local image preloaded into kind (`kind load docker-image ...`), generate manifests with:
+If using a locally preloaded image in kind (`kind load docker-image ...`):
 
 ```bash
 mk install k8s-runner \
@@ -90,7 +86,7 @@ test -f "$HOST_OUT/quickstart/watch/watch_latest.json"
 test -f "$HOST_OUT/quickstart/roi/roi_latest.json"
 ```
 
-## 4) Build handoff-pack locally
+## 4) Build handoff pack locally
 
 ```bash
 set -Eeuo pipefail
@@ -107,7 +103,7 @@ Expected files:
 - `HANDOFF_VERIFY.sh`
 - `README.md`
 
-## 5) Verify handoff-pack
+## 5) Verify handoff pack
 
 ```bash
 set -Eeuo pipefail
@@ -119,11 +115,11 @@ bash HANDOFF_VERIFY.sh
 Success criterion: script prints `OK`.
 
 Note:
-- `top_blocker=rbac_denied` in quickstart artifacts is a read-only verify note and does not block handoff-pack verification.
+- `top_blocker=rbac_denied` in quickstart artifacts is a read-only verify signal and does not block handoff-pack verification.
 
-## 6) Upgrade / update flow
+## 6) Update flow
 
-Use a new output directory for each version/image and keep previous bundle for rollback.
+Use a new output directory for each image/version and keep previous bundles for rollback.
 
 ```bash
 set -Eeuo pipefail
@@ -150,7 +146,7 @@ kubectl -n "$NS" get job "$JOB" -o jsonpath='{.status.succeeded}'; echo
 
 ## 7) Rollback and uninstall
 
-Rollback to previous known-good bundle:
+Rollback to a previous known-good bundle:
 
 ```bash
 set -Eeuo pipefail
@@ -172,11 +168,11 @@ cd ./report/install_k8s_runner
 ./rollback.sh
 ```
 
-## 8) Air-gapped notes (brief)
+## 8) Air-gapped notes
 
-- Build/package runner image in a connected environment, then transfer into the air-gapped registry/host using your approved transport.
+- Build/package the runner image in a connected environment, then transfer to your approved registry path.
 - Validate image digest before use.
-- Install `mk` and dependencies from internal package mirror or pre-approved wheelhouse.
-- Run handoff verification fully offline on the target side:
+- Install `mk` and dependencies from an approved mirror or wheelhouse.
+- Run handoff verification offline on the target side:
   - `bash HANDOFF_VERIFY.sh` (requires `sha256sum` and `tar` only).
-- Keep generated install bundles and handoff-pack artifacts in customer-controlled storage for audit and rollback.
+- Keep install bundles and handoff artifacts in customer-controlled storage for audit and rollback.
