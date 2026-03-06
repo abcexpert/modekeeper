@@ -95,11 +95,13 @@
     - Runbook added/updated under docs with copy/paste-validated commands.
     - Linked from main docs entry points used by customers.
     - Dry-run validation evidence captured for each lifecycle operation.
-  Evidence stub:
-    - tests:
+  Evidence:
     - docs:
+      - `docs/K8S_RUNNER_SELF_SERVE.md` (single canonical runbook)
+      - linked from `docs/INDEX.md`, `docs/README.md`, `README.md`
     - artifacts:
-    - commit:
+      - references existing MK-133 e2e flow: runner quickstart -> `kubectl cp /out/quickstart` -> `mk export handoff-pack` -> `HANDOFF_VERIFY.sh`
+      - explicitly documents non-blocking `top_blocker=rbac_denied` verify note in read-only flow
 
 - ID: MK-135
   Title: Docs alignment: update HANDOFF/RELEASING/SNAPSHOT wording for customer-managed execution

@@ -6,6 +6,7 @@ Navigation hub for current project documentation.
 - [Buyer journey](BUYER_JOURNEY.md)
 - [Product overview](product.md)
 - [Quickstart](QUICKSTART.md)
+- [Self-serve k8s runner runbook](K8S_RUNNER_SELF_SERVE.md)
 - [Developer guide](DEV_GUIDE.md)
 - [CLI reference](CLI_REFERENCE.md)
 - [Architecture](ARCHITECTURE.md)
