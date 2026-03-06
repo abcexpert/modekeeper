@@ -1,6 +1,6 @@
 # Enterprise Evaluation (30-60 Minutes)
 
-Use this path for a fast enterprise review with one command and link-first evidence.
+Use this path for a fast enterprise review of a verify-first read-only assessment for Kubernetes/GPU cost and risk, with link-first evidence and a change-ready handoff pack.
 
 ## Run
 
@@ -12,6 +12,8 @@ This creates:
 
 - `report/procurement_pack/` (procurement bundle + buyer evidence)
 - `report/enterprise_eval/index.md` (evaluation index for reviewers)
+
+Execution remains customer-managed; this path is assessment-first and non-mutating.
 
 The generated procurement pack includes these review docs:
 

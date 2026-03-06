@@ -3,7 +3,7 @@
 [![CI](https://github.com/abcexpert/modekeeper/actions/workflows/ci.yml/badge.svg)](https://github.com/abcexpert/modekeeper/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/modekeeper.svg?cacheSeconds=900)](https://pypi.org/project/modekeeper/)
 
-ModeKeeper is a verify-first operations agent for SRE, MLOps, and FinOps teams. The public runtime is customer-safe and read-only by default; apply is licensed and hard-gated.
+ModeKeeper is a verify-first read-only assessment for Kubernetes/GPU cost and risk, with a change-ready handoff pack for enterprise review. Execution stays customer-managed; apply is licensed and hard-gated.
 
 ## Start here (10 minutes)
 
@@ -114,4 +114,4 @@ Details and command contracts:
 
 ## Public vs Pro
 
-Public GitHub + PyPI (`modekeeper`) is the showroom/stub surface with verify-first workflows (`observe -> plan -> verify -> ROI -> export`). Apply/mutate capabilities are disabled by default in public and reserved for licensed distribution; see boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).
+Public GitHub + PyPI (`modekeeper`) provides a verify-first, read-only assessment path (`observe -> plan -> verify -> ROI -> export`) for Kubernetes/GPU cost and risk. Outputs are designed as a change-ready handoff pack for enterprise review and customer-managed execution. Apply/mutate capabilities are disabled by default in public and reserved for licensed distribution; see boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).
