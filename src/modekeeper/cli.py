@@ -5499,6 +5499,7 @@ def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
     clusterrole = str(args.clusterrole)
     job_name = str(args.job_name)
     image = str(args.image)
+    image_pull_policy = str(args.image_pull_policy)
 
     namespace_yaml = (
         "apiVersion: v1\n"
@@ -5582,6 +5583,7 @@ def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
         "      containers:\n"
         "      - name: runner\n"
         f"        image: {image}\n"
+        f"        imagePullPolicy: {image_pull_policy}\n"
         "        command: [\"/bin/sh\",\"-c\",\"mk quickstart --out /out/quickstart; echo MODEKEEPER_DONE; sleep 900\"]\n"
         "        volumeMounts:\n"
         "        - name: out\n"
@@ -5614,6 +5616,12 @@ def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
         f"POD_NAME=$(kubectl -n {namespace} get pods -l job-name={job_name} -o jsonpath='{{.items[0].metadata.name}}')\n"
         f"kubectl -n {namespace} cp \"$POD_NAME\":/out/quickstart ./out/quickstart\n"
         "mk export handoff-pack --in ./out/quickstart --out ./handoff\n"
+        "```\n"
+        "\n"
+        "## Local kind Note\n\n"
+        "For a locally preloaded image (e.g. via `kind load docker-image`), generate manifests with:\n\n"
+        "```bash\n"
+        "mk install k8s-runner --image modekeeper-runner:latest --image-pull-policy Never --out ./report/install_k8s_runner_local\n"
         "```\n"
     )
     apply_sh = (
@@ -6335,6 +6343,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--image",
         default="modekeeper-runner:latest",
         help="Runner image reference",
+    )
+    install_k8s_runner.add_argument(
+        "--image-pull-policy",
+        default="Always",
+        choices=["Always", "IfNotPresent", "Never"],
+        help="Runner container imagePullPolicy",
     )
     install_k8s_runner.set_defaults(func=cmd_install_k8s_runner)
 
