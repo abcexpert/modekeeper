@@ -5199,7 +5199,7 @@ def cmd_install_k8s_runner(args: argparse.Namespace) -> int:
         "      containers:\n"
         "      - name: runner\n"
         f"        image: {image}\n"
-        "        command: [\"mk\", \"doctor\", \"--out\", \"/out/doctor\"]\n"
+        "        command: [\"/bin/sh\",\"-c\",\"mk doctor --out /out/doctor; echo MODEKEEPER_DONE; sleep 900\"]\n"
         "        volumeMounts:\n"
         "        - name: out\n"
         "          mountPath: /out\n"
