@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: modekeeper-burst-traffic
+  namespace: default
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: burst
+        image: curlimages/curl:8.7.1
+        env:
+        - name: TARGET_URL
+          value: http://frontend.default.svc.cluster.local
+        - name: BURST_REQUESTS
+          value: "120"
+        - name: BURST_ROUNDS
+          value: "8"
+        - name: COOLDOWN_S
+          value: "8"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          round=1
+          while [ "$round" -le "$BURST_ROUNDS" ]; do
+            i=1
+            while [ "$i" -le "$BURST_REQUESTS" ]; do
+              curl -sS -o /dev/null "$TARGET_URL" || true
+              i=$((i + 1))
+            done
+            sleep "$COOLDOWN_S"
+            round=$((round + 1))
+          done

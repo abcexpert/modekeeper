@@ -71,6 +71,18 @@ from modekeeper.telemetry.sources import SyntheticSource
 
 
 _MAX_TELEMETRY_POINTS = 2000
+_ASSESSMENT_MIN_SAMPLE_COUNT = 3
+_ASSESSMENT_FIELDS = (
+    "assessment_result_class",
+    "coverage_ok",
+    "sample_count",
+    "window_s",
+    "sources_seen",
+    "evidence_quality",
+    "insufficient_evidence_reasons",
+    "signal_count",
+    "actionable_proposal_count",
+)
 _DRIFT_K8S_TARGETS = {
     "grad_accum_steps": 8,
     "microbatch_size": 32,
@@ -175,6 +187,140 @@ def _duration_ms_to_seconds(duration_ms: int) -> int | float:
     if duration_ms % 1000 == 0:
         return duration_ms // 1000
     return duration_ms / 1000.0
+
+
+def _observation_window_s(samples: list[object]) -> int | float:
+    timestamps: list[int] = []
+    for sample in samples:
+        ts = getattr(sample, "timestamp_ms", None)
+        if isinstance(ts, int):
+            timestamps.append(ts)
+    if len(timestamps) < 2:
+        return 0
+    window_ms = max(timestamps) - min(timestamps)
+    if window_ms <= 0:
+        return 0
+    if window_ms % 1000 == 0:
+        return window_ms // 1000
+    return round(window_ms / 1000.0, 3)
+
+
+def _is_signal_active(value: object) -> bool:
+    if value is True:
+        return True
+    if isinstance(value, dict):
+        if value.get("detected") is True:
+            return True
+        score = value.get("score")
+        if isinstance(score, (int, float)) and score > 0:
+            return True
+        severity = value.get("severity")
+        if isinstance(severity, (int, float)) and severity > 0:
+            return True
+    return False
+
+
+def _count_signals(signals: object) -> int:
+    if not isinstance(signals, dict):
+        return 0
+    count = 0
+    for key in ("drift", "burst", "straggler", "gpu_saturated"):
+        if _is_signal_active(signals.get(key)):
+            count += 1
+    if count == 0 and _is_signal_active(signals.get("incident")):
+        count = 1
+    return count
+
+
+def _sources_seen_for_assessment(
+    *,
+    observe_source: str | None,
+    samples: list[object] | None = None,
+) -> list[str]:
+    seen: list[str] = []
+    if observe_source == "file":
+        seen.extend(["metrics_window", "file_telemetry"])
+    elif observe_source in ("k8s", "k8s-logs"):
+        seen.extend(["metrics_window", "kube_object_context", "k8s_telemetry"])
+    elif observe_source == "synthetic":
+        seen.extend(["metrics_window", "synthetic_telemetry"])
+    else:
+        seen.append("metrics_window")
+    if samples:
+        has_gpu = any(
+            (
+                getattr(sample, "gpu_util_pct", None) is not None
+                or getattr(sample, "gpu_mem_util_pct", None) is not None
+            )
+            for sample in samples
+        )
+        if has_gpu:
+            seen.append("gpu_telemetry_allocation")
+    return sorted(set(seen))
+
+
+def _build_assessment_fields(
+    *,
+    sample_count: int,
+    window_s: int | float,
+    sources_seen: list[str],
+    signal_count: int,
+    actionable_proposal_count: int,
+    signals: object = None,
+) -> dict:
+    insufficient_evidence_reasons: list[str] = []
+    if sample_count < _ASSESSMENT_MIN_SAMPLE_COUNT:
+        insufficient_evidence_reasons.append("sample_count_too_low")
+    if not isinstance(window_s, (int, float)) or window_s <= 0:
+        insufficient_evidence_reasons.append("missing_metrics_window")
+    if "metrics_window" not in sources_seen:
+        insufficient_evidence_reasons.append("missing_required_evidence_family:metrics_window")
+    if isinstance(signals, dict) and "loss_missing" in (signals.get("notes") or []):
+        insufficient_evidence_reasons.append("missing_required_evidence_family:loss")
+
+    insufficient_evidence_reasons = sorted(set(insufficient_evidence_reasons))
+    coverage_ok = len(insufficient_evidence_reasons) == 0
+
+    if not coverage_ok:
+        assessment_result_class = "insufficient_evidence"
+        evidence_quality = "low"
+    elif signal_count > 0 or actionable_proposal_count > 0:
+        assessment_result_class = "signal_found"
+        if sample_count >= 12 and window_s >= 60:
+            evidence_quality = "high"
+        else:
+            evidence_quality = "medium"
+    else:
+        assessment_result_class = "no_actionable_signal"
+        if sample_count >= 12 and window_s >= 60:
+            evidence_quality = "high"
+        else:
+            evidence_quality = "medium"
+
+    return {
+        "assessment_result_class": assessment_result_class,
+        "coverage_ok": coverage_ok,
+        "sample_count": sample_count,
+        "window_s": window_s,
+        "sources_seen": sorted(set(sources_seen)),
+        "evidence_quality": evidence_quality,
+        "insufficient_evidence_reasons": insufficient_evidence_reasons,
+        "signal_count": signal_count,
+        "actionable_proposal_count": actionable_proposal_count,
+    }
+
+
+def _extract_assessment_fields(payload: object) -> dict:
+    if not isinstance(payload, dict):
+        payload = {}
+    result: dict[str, object] = {}
+    for key in _ASSESSMENT_FIELDS:
+        result[key] = payload.get(key)
+    if not isinstance(result.get("sources_seen"), list):
+        result["sources_seen"] = []
+    if not isinstance(result.get("insufficient_evidence_reasons"), list):
+        result["insufficient_evidence_reasons"] = []
+    return result
 
 
 def _downsample_indices(total: int, limit: int) -> list[int]:
@@ -1293,6 +1439,15 @@ def _write_closed_loop_summary(
         f"verify_ok: {report.get('verify_ok')}",
         f"apply_decision_summary: {report.get('apply_decision_summary')}",
         f"apply_blocked_reason: {report.get('apply_blocked_reason')}",
+        f"assessment_result_class: {report.get('assessment_result_class')}",
+        f"coverage_ok: {report.get('coverage_ok')}",
+        f"sample_count: {report.get('sample_count')}",
+        f"window_s: {report.get('window_s')}",
+        f"sources_seen: {json.dumps(report.get('sources_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"evidence_quality: {report.get('evidence_quality')}",
+        f"insufficient_evidence_reasons: {json.dumps(report.get('insufficient_evidence_reasons') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"signal_count: {report.get('signal_count')}",
+        f"actionable_proposal_count: {report.get('actionable_proposal_count')}",
         f"opportunity_hours_est: {report.get('opportunity_hours_est')}",
         f"opportunity_tokens_est: {report.get('opportunity_tokens_est')}",
         f"opportunity_usd_est: {report.get('opportunity_usd_est')}",
@@ -1686,7 +1841,15 @@ def _write_eval_summary(out_dir: Path, report: dict) -> Path:
         f"environment.unstable: {bool(environment.get('unstable'))}",
         f"environment.nodes_seen: {json.dumps(environment.get('nodes_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
         f"environment.gpu_models_seen: {json.dumps(environment.get('gpu_models_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"assessment_result_class: {report.get('assessment_result_class')}",
+        f"coverage_ok: {report.get('coverage_ok')}",
         f"sample_count: {report.get('sample_count')}",
+        f"window_s: {report.get('window_s')}",
+        f"sources_seen: {json.dumps(report.get('sources_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"evidence_quality: {report.get('evidence_quality')}",
+        f"insufficient_evidence_reasons: {json.dumps(report.get('insufficient_evidence_reasons') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"signal_count: {report.get('signal_count')}",
+        f"actionable_proposal_count: {report.get('actionable_proposal_count')}",
         f"proposed_actions_count: {report.get('proposed_actions_count')}",
         "key_artifacts:",
     ]
@@ -2082,6 +2245,21 @@ def _run_eval(
     if k8s_verify_report_path is not None:
         artifacts["k8s_verify_report_path"] = str(k8s_verify_report_path)
     key_artifacts = sorted(path for path in artifacts.values() if isinstance(path, str) and path)
+    sample_count = len(samples)
+    window_s = _observation_window_s(samples)
+    sources_seen = _sources_seen_for_assessment(
+        observe_source=observe_source,
+        samples=samples,
+    )
+    signal_count = _count_signals(signals)
+    assessment = _build_assessment_fields(
+        sample_count=sample_count,
+        window_s=window_s,
+        sources_seen=sources_seen,
+        signal_count=signal_count,
+        actionable_proposal_count=len(proposed_actions),
+        signals=signals,
+    )
 
     report = {
         "schema_version": "eval.v0",
@@ -2094,7 +2272,7 @@ def _run_eval(
         "read_only": True,
         "apply_requested": False,
         "dry_run": True,
-        "sample_count": len(samples),
+        "sample_count": sample_count,
         "telemetry_points_included": _has_loss_and_throughput(samples),
         "signals": signals,
         "environment": _build_environment_fingerprint(samples),
@@ -2105,6 +2283,7 @@ def _run_eval(
         "artifacts": artifacts,
         "key_artifacts": key_artifacts,
     }
+    report.update(assessment)
     if observe_source == "file":
         report["observe_path"] = str(observe_path) if observe_path else None
         report["observe_ingest"] = getattr(source, "observe_ingest", None)
@@ -2129,7 +2308,11 @@ def _run_eval(
                 f"unstable={bool(report['environment'].get('unstable'))}",
                 f"nodes_seen={len(report['environment'].get('nodes_seen') or [])}",
                 f"gpu_models_seen={len(report['environment'].get('gpu_models_seen') or [])}",
-                f"sample_count={len(samples)}",
+                f"assessment_result_class={report.get('assessment_result_class')}",
+                f"sample_count={sample_count}",
+                f"window_s={window_s}",
+                f"signal_count={report.get('signal_count')}",
+                f"actionable_proposal_count={report.get('actionable_proposal_count')}",
                 f"proposed_actions_count={len(proposed_actions)}",
                 f"eval={eval_latest_path}",
                 f"summary={summary_path}",
@@ -2328,6 +2511,18 @@ def cmd_eval(args: argparse.Namespace) -> int:
 
     proposed = plan_report.get("proposed") if isinstance(plan_report, dict) else None
     proposed_actions_count = len(proposed) if isinstance(proposed, list) else 0
+    assessment = _extract_assessment_fields(plan_report)
+    if assessment.get("assessment_result_class") is None:
+        assessment.update(
+            _build_assessment_fields(
+                sample_count=0,
+                window_s=0,
+                sources_seen=[],
+                signal_count=_count_signals(signals),
+                actionable_proposal_count=proposed_actions_count,
+                signals=signals,
+            )
+        )
     verify_ok = verify_report.get("ok") if isinstance(verify_report, dict) else None
     top_blocker: str | None = None
     verify_blocker = verify_report.get("verify_blocker") if isinstance(verify_report, dict) else None
@@ -2367,12 +2562,21 @@ def cmd_eval(args: argparse.Namespace) -> int:
         },
         "key_artifacts": [],
     }
+    report.update(assessment)
     summary_lines = [
         "# Eval",
         f"ok: {_report_bool(bool(report['ok']))}",
         f"top_blocker: {top_blocker or 'n/a'}",
         f"inputs_root: {inputs_root}",
+        f"assessment_result_class: {report.get('assessment_result_class')}",
+        f"coverage_ok: {report.get('coverage_ok')}",
         f"sample_count: {report.get('sample_count')}",
+        f"window_s: {report.get('window_s')}",
+        f"sources_seen: {json.dumps(report.get('sources_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"evidence_quality: {report.get('evidence_quality')}",
+        f"insufficient_evidence_reasons: {json.dumps(report.get('insufficient_evidence_reasons') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"signal_count: {report.get('signal_count')}",
+        f"actionable_proposal_count: {report.get('actionable_proposal_count')}",
         f"proposed_actions_count: {proposed_actions_count}",
         f"notes: {json.dumps(report['notes'], separators=(',', ':'), ensure_ascii=False)}",
     ]
@@ -2411,6 +2615,18 @@ def cmd_watch(args: argparse.Namespace) -> int:
 
     proposed = plan_report.get("proposed") if isinstance(plan_report, dict) else None
     proposed_total = len(proposed) if isinstance(proposed, list) else 0
+    assessment = _extract_assessment_fields(plan_report)
+    if assessment.get("assessment_result_class") is None:
+        assessment.update(
+            _build_assessment_fields(
+                sample_count=0,
+                window_s=0,
+                sources_seen=[],
+                signal_count=0,
+                actionable_proposal_count=proposed_total,
+                signals=None,
+            )
+        )
     blocked_reasons = plan_report.get("blocked_reasons") if isinstance(plan_report, dict) else None
     blocked_total = sum(v for v in blocked_reasons.values() if isinstance(v, int)) if isinstance(blocked_reasons, dict) else 0
     applied_reasons = plan_report.get("applied_reasons") if isinstance(plan_report, dict) else None
@@ -2450,11 +2666,21 @@ def cmd_watch(args: argparse.Namespace) -> int:
         },
         "key_artifacts": [],
     }
+    report.update(assessment)
     summary_lines = [
         "# Watch",
         f"ok: {_report_bool(bool(report['ok']))}",
         f"inputs_root: {inputs_root}",
         f"duration_s: {duration_s}",
+        f"assessment_result_class: {report.get('assessment_result_class')}",
+        f"coverage_ok: {report.get('coverage_ok')}",
+        f"sample_count: {report.get('sample_count')}",
+        f"window_s: {report.get('window_s')}",
+        f"sources_seen: {json.dumps(report.get('sources_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"evidence_quality: {report.get('evidence_quality')}",
+        f"insufficient_evidence_reasons: {json.dumps(report.get('insufficient_evidence_reasons') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"signal_count: {report.get('signal_count')}",
+        f"actionable_proposal_count: {report.get('actionable_proposal_count')}",
         f"iterations_done: {report.get('iterations_done')}",
         f"proposed_total: {proposed_total}",
         f"blocked_total: {blocked_total}",
@@ -3353,6 +3579,22 @@ def _run_closed_loop_once(
     }
     DecisionTraceWriter(trace_path).emit(trace_event)
 
+    sample_count = len(samples)
+    window_s = _observation_window_s(samples)
+    sources_seen = _sources_seen_for_assessment(
+        observe_source=observe_source,
+        samples=samples,
+    )
+    signal_count = _count_signals(signals)
+    assessment = _build_assessment_fields(
+        sample_count=sample_count,
+        window_s=window_s,
+        sources_seen=sources_seen,
+        signal_count=signal_count,
+        actionable_proposal_count=len(proposed),
+        signals=signals,
+    )
+
     report_base = {
         "mode": sm.mode.value,
         "policy": policy,
@@ -3409,6 +3651,7 @@ def _run_closed_loop_once(
             "schema_version": DECISION_TRACE_SCHEMA_VERSION,
         },
     }
+    report_base.update(assessment)
     if observe_source == "file":
         report_base["observe_ingest"] = source.observe_ingest
     finished_at = _utc_now()
@@ -3510,6 +3753,15 @@ def _write_watch_summary(out_dir: Path, report: dict) -> None:
         f"apply_attempted_total: {report.get('apply_attempted_total')}",
         f"apply_ok_total: {report.get('apply_ok_total')}",
         f"apply_failed_total: {report.get('apply_failed_total')}",
+        f"assessment_result_class: {report.get('assessment_result_class')}",
+        f"coverage_ok: {report.get('coverage_ok')}",
+        f"sample_count: {report.get('sample_count')}",
+        f"window_s: {report.get('window_s')}",
+        f"sources_seen: {json.dumps(report.get('sources_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"evidence_quality: {report.get('evidence_quality')}",
+        f"insufficient_evidence_reasons: {json.dumps(report.get('insufficient_evidence_reasons') or [], separators=(',', ':'), ensure_ascii=False)}",
+        f"signal_count: {report.get('signal_count')}",
+        f"actionable_proposal_count: {report.get('actionable_proposal_count')}",
         f"last_iteration_out_dir: {report.get('last_iteration_out_dir')}",
     ]
     observe_ingest = report.get("observe_ingest")
@@ -3579,17 +3831,34 @@ def _build_watch_report(
 ) -> dict:
     last_iter_dir = Path(last_iteration_out_dir) if last_iteration_out_dir else None
     last_iteration_report_path: str | None = None
+    last_iteration_report: dict | None = None
     if last_iter_dir is not None:
         candidate = last_iter_dir / "closed_loop_latest.json"
         if candidate.exists():
             last_iteration_report_path = str(candidate)
+            payload, error = _read_json_best_effort(candidate)
+            if error is None and isinstance(payload, dict):
+                last_iteration_report = payload
     last_iteration_explain_path: str | None = None
     if last_iter_dir is not None:
         candidate = last_iter_dir / "explain.jsonl"
         if candidate.exists():
             last_iteration_explain_path = str(candidate)
 
-    return {
+    assessment = _extract_assessment_fields(last_iteration_report)
+    if assessment.get("assessment_result_class") is None:
+        assessment.update(
+            _build_assessment_fields(
+                sample_count=0,
+                window_s=0,
+                sources_seen=[],
+                signal_count=0,
+                actionable_proposal_count=0,
+                signals=None,
+            )
+        )
+
+    report = {
         "schema_version": "v0",
         "started_at": _format_utc(started_at),
         "finished_at": _format_utc(finished_at),
@@ -3611,6 +3880,8 @@ def _build_watch_report(
             "last_iteration_explain_path": last_iteration_explain_path,
         },
     }
+    report.update(assessment)
+    return report
 
 
 def _cmd_closed_loop_watch_legacy(args: argparse.Namespace) -> int:
@@ -4559,6 +4830,23 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
             "top_blocker": roi_report.get("top_blocker") if isinstance(roi_report, dict) else None,
         },
     }
+    assessment_source: dict | None = None
+    if isinstance(eval_report, dict) and eval_report.get("assessment_result_class"):
+        assessment_source = eval_report
+    elif isinstance(watch_report, dict) and watch_report.get("assessment_result_class"):
+        assessment_source = watch_report
+    assessment = _extract_assessment_fields(assessment_source)
+    if assessment.get("assessment_result_class") is None:
+        assessment.update(
+            _build_assessment_fields(
+                sample_count=0,
+                window_s=0,
+                sources_seen=[],
+                signal_count=0,
+                actionable_proposal_count=0,
+                signals=None,
+            )
+        )
 
     manifest = {
         "schema_version": "bundle.v0",
@@ -4567,6 +4855,7 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
         "run_id": run_id,
         "inputs_root": str(in_dir),
         "metering": metering,
+        "assessment": assessment,
         "environment": environment,
         "files": file_entries,
         "notes": sorted(notes),
@@ -4607,6 +4896,15 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
             f"watch.proposed_total: {metering['watch'].get('proposed_total')}",
             f"watch.blocked_total: {metering['watch'].get('blocked_total')}",
             f"watch.applied_total: {metering['watch'].get('applied_total')}",
+            f"assessment_result_class: {assessment.get('assessment_result_class')}",
+            f"coverage_ok: {assessment.get('coverage_ok')}",
+            f"assessment.sample_count: {assessment.get('sample_count')}",
+            f"assessment.window_s: {assessment.get('window_s')}",
+            f"assessment.sources_seen: {json.dumps(assessment.get('sources_seen') or [], separators=(',', ':'), ensure_ascii=False)}",
+            f"assessment.evidence_quality: {assessment.get('evidence_quality')}",
+            f"assessment.insufficient_evidence_reasons: {json.dumps(assessment.get('insufficient_evidence_reasons') or [], separators=(',', ':'), ensure_ascii=False)}",
+            f"assessment.signal_count: {assessment.get('signal_count')}",
+            f"assessment.actionable_proposal_count: {assessment.get('actionable_proposal_count')}",
             f"roi.opportunity_hours_est: {metering['roi'].get('opportunity_hours_est')}",
             f"roi.proposed_actions_count: {metering['roi'].get('proposed_actions_count')}",
             f"roi.ok: {metering['roi'].get('ok')}",
