@@ -117,7 +117,7 @@
 
 - ID: MK-135
   Title: Docs alignment: update HANDOFF/RELEASING/SNAPSHOT wording for customer-managed execution
-  Status: TODO
+  Status: DONE
   Acceptance criteria:
     - `docs/HANDOFF.md`, `docs/RELEASING.md`, and `docs/SNAPSHOT.md` consistently describe customer-managed install/run/export.
     - Vendor role is clearly scoped to license issuance and support response, not runtime operations.
@@ -126,11 +126,15 @@
     - All three docs updated with no contradictory instructions.
     - Cross-links between handoff/releasing/snapshot are verified.
     - Reviewer checklist confirms wording alignment for customer-managed execution.
-  Evidence stub:
-    - tests:
+  Evidence:
     - docs:
-    - artifacts:
-    - commit:
+      - `docs/HANDOFF.md` aligned to canonical self-serve customer-managed flow
+      - `docs/RELEASING.md` adds customer-managed execution note with canonical flow wording
+      - `docs/SNAPSHOT.md` uses same canonical flow and non-blocking read-only verify patch denial note
+      - cross-links present:
+        - `docs/HANDOFF.md` -> `docs/RELEASING.md`, `docs/SNAPSHOT.md`
+        - `docs/RELEASING.md` -> `docs/HANDOFF.md`, `docs/SNAPSHOT.md`
+        - `docs/SNAPSHOT.md` -> `docs/HANDOFF.md`, `docs/RELEASING.md`
 
 
 - ID: MK-112

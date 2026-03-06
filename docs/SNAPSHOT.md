@@ -5,6 +5,10 @@
 > Дефолт продукта: **plan-only + verify** (ничего не меняет). Платный режим: apply только под лицензией и после verify-ok.
 > Роль вендора: только лицензии и support, без участия в runtime-операциях клиента.
 
+## Related docs
+- `docs/HANDOFF.md` - handoff package and verification flow details.
+- `docs/RELEASING.md` - vendor-side release automation boundary and flow.
+
 ## Links
 - PyPI: `modekeeper`
 - GitHub: `abcexpert/modekeeper`
@@ -15,8 +19,8 @@
 - **Paid:** one-shot `closed-loop run --apply` (рекомендуется), gated: kill-switch + license + **verify-ok**.
 - **Runner model:** customer-managed k8s runner (self-serve install/upgrade/rollback/uninstall).
 - **Export model:** verified handoff/export (`tar.gz` + `sha256` + verification transcript/script).
-- **Self-serve runner e2e:** confirmed end-to-end via abc2 on kind after PR #63 (main commit `dd87698`): runner started, `MODEKEEPER_DONE` observed, `/out/quickstart` copied, `mk export handoff-pack` + `HANDOFF_VERIFY.sh` returned `OK`.
-- **Observation:** quickstart outcome reported `top_blocker=rbac_denied`, while handoff-pack still succeeded.
+- **Self-serve canonical flow:** customer-managed read-only k8s runner executes `mk quickstart --out /out/quickstart`; artifacts are collected via `kubectl cp ...:/out/quickstart`; local workstation builds `mk export handoff-pack`; verify step is `bash HANDOFF_VERIFY.sh`.
+- **Observation:** read-only verify patch denial (`top_blocker=rbac_denied`) is a non-blocking note; handoff-pack flow still succeeds.
 
 ## 0.1) Canonical kind/e2e bootstrap
 - Step 0: `./scripts/kind-bootstrap.sh`
