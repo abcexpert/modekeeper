@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Procurement/RFI Pack is a one-command, shareable review bundle for enterprise buyer workflows. It composes the existing Buyer Proof Pack plus core policy/workflow docs and reproducible metadata for technical review.
+Procurement/RFI Pack is a one-command, shareable change-ready handoff pack for enterprise review. It packages verify-first read-only assessment outputs for Kubernetes/GPU cost and risk, together with core policy/workflow docs and reproducible metadata.
 
 ## Run this
 
@@ -27,6 +27,8 @@ cd report/procurement_pack && sha256sum -c checksums.sha256
 ```
 
 The verification should complete with no `FAILED` lines.
+
+Execution remains customer-managed; this pack is for review and handoff, not vendor-operated runtime changes.
 
 ## Checklist
 
