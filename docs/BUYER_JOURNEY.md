@@ -1,6 +1,7 @@
 # Buyer Journey (Public Showroom)
 
 This flow is for buyer-safe evaluation in public mode: install, validate environment, run verify-first workflows, and prepare procurement evidence without mutations.
+Execution is customer-managed.
 
 ## 1) Install
 
@@ -26,14 +27,14 @@ Expected: all help commands exit with `0`.
 mk observe --source synthetic --duration 30s --record-raw report/buyer/observe/observe_raw.jsonl --out report/buyer/observe
 ```
 
-## 4) Dry-run / plan / verify (no apply)
+## 4) Plan / verify / export (no apply)
 
 ```bash
 mk closed-loop run --scenario drift --dry-run --out report/buyer/plan
 PLAN="$(python3 -c 'import json; print(json.load(open("report/buyer/plan/closed_loop_latest.json", encoding="utf-8"))["k8s_plan_path"])')"
 mk k8s verify --plan "$PLAN" --out report/buyer/verify
-mk roi estimate --observe-source file --observe-path report/buyer/observe/observe_raw.jsonl --out report/buyer/roi
 mk export bundle --in report/buyer --out report/buyer/export
+mk roi estimate --observe-source file --observe-path report/buyer/observe/observe_raw.jsonl --out report/buyer/roi
 ```
 
 ## 5) Procurement pack
@@ -55,3 +56,10 @@ Primary output: `report/procurement_pack/`.
 
 - Product and procurement questions: GitHub Issues/Discussions.
 - Security disclosures: GitHub Security Advisories (`.github/SECURITY.md`).
+
+## 8) External realistic workload proof (credibility input)
+
+- Public summary: [ONLINE_BOUTIQUE_PROOF.md](ONLINE_BOUTIQUE_PROOF.md)
+- Reproducible forced-scenario runbook: [ONLINE_BOUTIQUE_FORCED_OPPORTUNITIES.md](ONLINE_BOUTIQUE_FORCED_OPPORTUNITIES.md)
+
+Scope note: this confirms a non-zero read-only signal/proposal path on two forced scenarios; it is not universal production coverage.

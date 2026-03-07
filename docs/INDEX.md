@@ -4,6 +4,8 @@ Public documentation hub for ModeKeeper's verify-first, read-only assessment pos
 Kubernetes/GPU cost and risk assessment, customer-managed execution, and change-ready handoff for enterprise review.
 
 ## Start here (public assessment)
+- [Offer](OFFER.md)
+- [Ideal customer profile (ICP)](ICP.md)
 - [Quickstart](QUICKSTART.md)
 - [Getting started](GETTING_STARTED.md)
 - [Buyer journey](BUYER_JOURNEY.md)
