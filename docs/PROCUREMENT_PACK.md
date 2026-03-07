@@ -1,4 +1,4 @@
-# Procurement/RFI Pack
+# Procurement Pack
 
 ## Purpose
 

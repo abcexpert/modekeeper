@@ -66,15 +66,17 @@ Documentation index: [`docs/INDEX.md`](docs/INDEX.md)
 - Questions / feedback: GitHub Issues (preferred) and Discussions.
 - Security issues: please use GitHub Security Advisories (private disclosure). See `.github/SECURITY.md`.
 
-## Start here
+## Reference docs
 
 - Buyer journey: [`docs/BUYER_JOURNEY.md`](docs/BUYER_JOURNEY.md)
 - Product overview: [`docs/product.md`](docs/product.md)
+- Getting started: [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md)
 - Quickstart: [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 - Security posture: [`docs/SECURITY_POSTURE.md`](docs/SECURITY_POSTURE.md)
 - Buyer proof pack: [`docs/BUYER_PROOF_PACK.md`](docs/BUYER_PROOF_PACK.md)
 - Procurement pack: [`docs/PROCUREMENT_PACK.md`](docs/PROCUREMENT_PACK.md)
 - Proof packs overview: [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md)
+- Handoff guide: [`docs/HANDOFF.md`](docs/HANDOFF.md)
 - 10-minute buyer script: [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md)
 - Enterprise evaluation: [`docs/ENTERPRISE_EVALUATION.md`](docs/ENTERPRISE_EVALUATION.md)
 - Current project status: [`docs/STATUS.md`](docs/STATUS.md)
