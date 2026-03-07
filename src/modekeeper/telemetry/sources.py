@@ -44,6 +44,11 @@ class SyntheticSource(TelemetrySource):
                 if i > steps * 0.58:
                     latency *= 2.05
                     throughput *= 0.55
+            elif self.scenario == "memory_pressure":
+                # Deterministic proof-only profile: sustained memory-pressure-like slowdown.
+                if i > steps * 0.55:
+                    latency *= 2.15
+                    throughput *= 0.48
             elif self.scenario == "burst" and i > steps * 0.6:
                 latency *= 1.8
             elif self.scenario == "straggler":
