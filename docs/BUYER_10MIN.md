@@ -1,6 +1,6 @@
 # BUYER_10MIN
 
-Скрипт на 10 минут для buyer/procurement/security: что запустить, что получить, что показать и как проверить.
+10-minute first-contact script for buyer/procurement/security: what to run, what to verify, and what can/cannot be claimed from public evidence.
 
 ## 1) Prereqs
 
@@ -38,17 +38,29 @@ cd report/procurement_pack && sha256sum -c checksums.sha256
 
 ## 5) Talking points
 
-- Сначала verify, потом доверие: сначала проверяем целостность, потом читаем артефакты.
-- Один канонический публичный путь: `observe -> plan -> verify -> export`.
-- Procurement pack остаётся упаковкой/передачей артефактов (buyer artifacts + manifest с checksum), а не самим workflow.
-- Артефакты детерминированы: структура стабильная и проверяемая.
-- Целостность проверяется явно: `sha256sum -c checksums.sha256`.
-- По умолчанию режим read-only.
-- `apply` жёстко gated и блокируется, если условия не выполнены.
-- Kill-switch абсолютный и останавливает apply.
-- `decision_trace` и `explain` дают полноценный audit trail.
+- Verify first: check integrity first, then review artifacts.
+- Canonical public workflow: `observe -> plan -> verify -> export`.
+- Public core is strict read-only assessment for Kubernetes/GPU cost and risk before any mutate/apply decision.
+- Procurement pack is artifact packaging/transfer, not a separate product workflow.
+- Integrity is explicit and testable via `sha256sum -c checksums.sha256`.
+- `apply` is separately licensed/gated and not baseline public evaluation.
+- Runtime boundary is customer-managed (customer environment, customer controls).
 
-## 6) PRO note
+## 6) First-contact claims boundary
+
+Say in first contact:
+- Public core baseline is frozen at `v0.1.33`.
+- Post-baseline replayable proof tranche passes 3/3 scenarios on current `main` using `scripts/proof-matrix-replay.sh`: `replica_overprovisioning`, `cpu_pressure`, `memory_pressure`.
+- Evidence is reproducible for that published matrix and supports verify-first claims.
+
+Do not say in first contact:
+- Universal/exhaustive detection coverage across all workloads/environments.
+- Guaranteed savings or guaranteed risk reduction.
+- Vendor-operated/autonomous production execution.
+- Public availability of apply/implementation capabilities.
+- Any expansion of public product surface beyond frozen public core.
+
+## 7) PRO note
 
 PRO-релизы в публичных каналах идут как notes-only.
 Доставка делается через vendor-provided stamp + transcripts + SHA256.
