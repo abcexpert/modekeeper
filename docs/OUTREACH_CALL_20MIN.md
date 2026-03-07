@@ -8,6 +8,7 @@ Kubernetes/GPU cost and risk, with **customer-managed execution** and a
 
 Related buyer docs:
 - [docs/BUYER_10MIN.md](BUYER_10MIN.md)
+- [docs/BUYER_PROOF_PACK.md](BUYER_PROOF_PACK.md)
 - [docs/BUYER_REQUEST_CHECKLIST.md](BUYER_REQUEST_CHECKLIST.md)
 - [docs/PROOF_PACKS.md](PROOF_PACKS.md)
 
@@ -27,14 +28,15 @@ Use this script:
 
 > Thanks for joining. I will keep this practical and short.  
 > In 20 minutes, we should answer three things:  
-> 1) Is there measurable Kubernetes/GPU cost and risk upside for your team?  
-> 2) Can we prove value safely in read-only mode first?  
+> 1) Is your Kubernetes/GPU cost and risk assessment scope a fit for ModeKeeper public core?  
+> 2) Can we run a safe read-only verify-first assessment in your environment?  
 > 3) Do we have a clear pilot and handoff plan with owners and dates?  
-> ModeKeeper works verify-first: we observe current behavior, quantify ROI,
-> produce a plan and verification evidence, and export a change-ready handoff
-> pack for enterprise review. Apply/implementation is a separate gated path.
-> We also have a public external realistic workload proof summary (Online Boutique,
-> forced scenarios) as credibility input, with explicit non-universal scope.
+> ModeKeeper works verify-first: observe, plan, verify, and export a
+> change-ready handoff pack for enterprise review. Public default is strict
+> read-only assessment. Apply/implementation is a separate gated path.
+> Public replay evidence on current main confirms 3/3 matrix scenarios pass
+> (`replica_overprovisioning`, `cpu_pressure`, `memory_pressure`) with
+> explicit non-universal scope.
 
 ## 2) Agenda (say this at minute 1)
 
@@ -81,29 +83,27 @@ Hold if one or more are missing:
 ### "We cannot allow risky changes."
 
 Response:
-> That is exactly why we start verify-first. Initial work is read-only: observe, plan, verify, and export evidence. No mutations are required for value proof.
+> That is exactly why we start verify-first. Initial work is read-only: observe, plan, verify, and export evidence. No mutations are required for first-contact evidence review.
 
 ### "We do not trust black-box recommendations."
 
 Response:
-> We provide explicit assumptions, expected impact, and verification artifacts before any change discussion. You can review the plan as evidence, not as blind automation.
+> We provide verification artifacts and decision traces before any change discussion. You can review evidence directly, not rely on blind automation.
 
 ### "We do not have perfect cost data."
 
 Response:
-> We can still start with a pricing anchor and show linear rescaling so your finance rates can be applied later without redoing discovery.
+> That does not block first contact. We can run read-only assessment and verification evidence collection first, then map results to your internal finance model under your controls.
 
 ### "This sounds like extra process overhead."
 
 Response:
-> The process is intentionally short: observe current state, quantify likely
-> ROI, verify a safe plan, and decide. It reduces rework from unverified
-> tuning.
+> The process is intentionally short: observe, plan, verify, export, and decide.
+> It keeps risk review explicit before any apply path is considered.
 
 Reference material for proof workflows:
 - [docs/PROOF_PACKS.md](PROOF_PACKS.md)
 - [docs/BUYER_10MIN.md](BUYER_10MIN.md)
-- [docs/ONLINE_BOUTIQUE_PROOF.md](ONLINE_BOUTIQUE_PROOF.md)
 
 ## 6) Pilot proposal (minutes 16-18)
 
@@ -111,13 +111,13 @@ Use this structure live:
 
 1. Scope: 1-2 clusters, agreed namespaces, 5-15 priority workloads.
 2. Duration: 14 days total.
-3. Phase 1 (Days 1-5): Observe + baseline + initial ROI estimate.
+3. Phase 1 (Days 1-5): Observe + baseline evidence collection.
 4. Phase 2 (Days 6-10): Plan/verify package with workload-level recommendations and safety checks.
 5. Phase 3 (Days 11-14): Decision checkpoint and change-ready handoff pack for enterprise review.
-6. Deliverables: baseline summary, ROI model + assumptions, plan/verify
-   artifacts, export handoff pack, decision readout.
-7. Success metrics: target spend reduction/risk reduction range, plus stability
-   guardrail metrics.
+6. Deliverables: baseline summary, plan/verify artifacts, export handoff pack,
+   decision readout.
+7. Success metrics: completion of read-only evidence package, review sign-off
+   readiness, and explicit go/no-go decision criteria.
 
 ## 7) Next steps (minutes 18-20)
 
@@ -141,19 +141,19 @@ Thanks for the call today. Recap of what we aligned:
 - Pilot scope: {{clusters/namespaces/workloads}}
 - Constraints: {{do-not-touch items, change policy}}
 - Access path: {{read-only API or customer-run collection}}
-- Success criteria: {{metrics + target range}}
+- Success criteria: {{evidence completion + review criteria}}
 - Decision date: {{date}}
 
 Proposed pilot (14 days):
-- Observe baseline and quantify ROI
+- Observe baseline evidence
 - Produce plan/verify evidence package
 - Export a change-ready handoff pack for enterprise review
 
 Buyer references:
 - [docs/BUYER_REQUEST_CHECKLIST.md](BUYER_REQUEST_CHECKLIST.md)
+- [docs/BUYER_PROOF_PACK.md](BUYER_PROOF_PACK.md)
 - [docs/PROOF_PACKS.md](PROOF_PACKS.md)
 - [docs/BUYER_10MIN.md](BUYER_10MIN.md)
-- [docs/ONLINE_BOUTIQUE_PROOF.md](ONLINE_BOUTIQUE_PROOF.md)
 
 If this matches your view, reply "approved" and we will start kickoff scheduling.
 

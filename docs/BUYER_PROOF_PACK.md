@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Buyer Proof Pack is a one-command, customer-safe evidence run for enterprise review. It produces auditable read-only artifacts that Security and Procurement can inspect for safety gates, verification outcomes, and workflow traceability.
+Buyer Proof Pack is a one-command, customer-safe evidence run for enterprise review. It produces auditable read-only artifacts that Security and Procurement can inspect for verify outcomes, safety gates, and workflow traceability.
 
 ## Run this
 
@@ -11,6 +11,19 @@ Buyer Proof Pack is a one-command, customer-safe evidence run for enterprise rev
 ```
 
 This writes artifacts to `report/buyer_pack`.
+
+## What is already proven (public, replayable)
+
+- Public core behavior is frozen at `v0.1.33`.
+- On current `main`, replayable proof tranche passes 3/3 published matrix scenarios:
+  - `replica_overprovisioning`
+  - `cpu_pressure`
+  - `memory_pressure`
+- Replay command:
+
+```bash
+scripts/proof-matrix-replay.sh
+```
 
 ## What to hand to Security / Procurement
 
@@ -39,5 +52,16 @@ Key artifact locations:
 
 For public/private boundary and distribution controls, use `docs/DISTRIBUTION_POLICY.md`.
 
-Related public external workload proof summary:
-- `docs/ONLINE_BOUTIQUE_PROOF.md` (artifacts remain local under `report/online_boutique/**`)
+## First-contact claim boundary
+
+Justified:
+- Verify-first strict read-only assessment workflow (`observe -> plan -> verify -> export`).
+- Customer-managed runtime boundary.
+- Gated/separate apply path (not baseline public evaluation).
+- Reproducible replay evidence for the published 3-scenario matrix.
+
+Not justified:
+- Universal/exhaustive workload/environment coverage.
+- Guaranteed savings or guaranteed risk reduction outcomes.
+- Vendor-operated/autonomous production execution.
+- Public apply/implementation availability.
