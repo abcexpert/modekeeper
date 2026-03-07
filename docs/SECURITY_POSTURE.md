@@ -7,7 +7,7 @@ Threat model for enterprise review: `docs/THREAT_MODEL.md`.
 
 ## Execution model
 
-- Public runtime is read-only by default: plan/verify/export flows are intended to be non-mutating.
+- Public runtime is read-only by default: observe/plan/verify/export flows are intended to be non-mutating.
 - Public evidence artifacts are generated for review and traceability.
 - Mutation/apply paths are hard-gated and blocked unless required controls pass.
 

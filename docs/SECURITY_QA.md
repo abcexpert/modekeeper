@@ -4,7 +4,7 @@ Concise answers for Security and Procurement review. This page is link-first and
 
 ## 1) What is the execution model?
 
-ModeKeeper is read-only by default for public workflows (`plan`, `verify`, `export`). Mutation/apply is a separately gated path.
+ModeKeeper is read-only by default for public workflows (`observe`, `plan`, `verify`, `export`). Mutation/apply is a separately gated path.
 
 References:
 - `docs/SECURITY_POSTURE.md`
