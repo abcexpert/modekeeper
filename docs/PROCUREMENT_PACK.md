@@ -2,7 +2,8 @@
 
 ## Purpose
 
-Procurement/RFI Pack is a one-command, shareable change-ready handoff pack for enterprise review. It packages verify-first read-only assessment outputs for Kubernetes/GPU cost and risk, together with core policy/workflow docs and reproducible metadata.
+Procurement/RFI Pack is a one-command, shareable procurement bundle for enterprise review. It packages verify-first read-only assessment outputs for Kubernetes/GPU cost and risk, together with core policy/workflow docs and reproducible metadata.
+This output is `report/procurement_pack/**` and is distinct from `mk export handoff-pack`.
 
 ## Run this
 
@@ -19,6 +20,8 @@ Send these artifacts together:
 - `report/procurement_pack/procurement_pack.tar.gz`
 - buyer-pack manifest artifacts under `report/procurement_pack/buyer_pack/`
 - `report/procurement_pack/checksums.sha256`
+
+Buyer-pack export artifacts are included under `report/procurement_pack/buyer_pack/export/` (for example: `bundle_manifest.json`, `bundle.tar.gz`, `bundle_summary.md`).
 
 ## Verify checksums
 
