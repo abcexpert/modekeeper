@@ -42,12 +42,8 @@ Primary references: `README.md`, `docs/QUICKSTART.md`, `docs/PROCUREMENT_PACK.md
 
 ### 5) Public assessment evolution (high level)
 - Maintain the public assessment path as a safe, read-only evaluation experience.
-- Prioritize proof-layer depth over new public breadth for the next delivery cycle.
-- Follow canonical proof order from `docs/TICKETS.md`:
-  1. `replica_overprovisioning` non-zero proof
-  2. CPU pressure proof
-  3. memory pressure proof
-  4. detection-quality regression gate across proof scenarios
+- Keep public surface fixed and continue proof-layer rigor without adding new public breadth.
+- Post-`v0.1.33` proof matrix replay on current `main` is complete via `scripts/proof-matrix-replay.sh`: `replica_overprovisioning`, `cpu_pressure`, and `memory_pressure` all pass (3/3).
 - Preserve a clear boundary: public roadmap communicates product direction, not internal delivery choreography.
 
 ## Evaluation path for new teams
