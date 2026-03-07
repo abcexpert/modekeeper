@@ -115,7 +115,7 @@ Use this structure live:
 4. Phase 2 (Days 6-10): Plan/verify package with workload-level recommendations and safety checks.
 5. Phase 3 (Days 11-14): Decision checkpoint and change-ready handoff pack for enterprise review.
 6. Deliverables: baseline summary, ROI model + assumptions, plan/verify
-   artifacts, export bundle, decision readout.
+   artifacts, export handoff pack, decision readout.
 7. Success metrics: target spend reduction/risk reduction range, plus stability
    guardrail metrics.
 

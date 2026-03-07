@@ -33,7 +33,7 @@ mk observe --source synthetic --duration 30s --record-raw report/buyer/observe/o
 mk closed-loop run --scenario drift --dry-run --out report/buyer/plan
 PLAN="$(python3 -c 'import json; print(json.load(open("report/buyer/plan/closed_loop_latest.json", encoding="utf-8"))["k8s_plan_path"])')"
 mk k8s verify --plan "$PLAN" --out report/buyer/verify
-mk export bundle --in report/buyer --out report/buyer/export
+mk export handoff-pack --in report/buyer --out report/buyer/handoff
 # Optional supporting evidence:
 mk roi estimate --observe-source file --observe-path report/buyer/observe/observe_raw.jsonl --out report/buyer/roi
 ```

@@ -10,7 +10,7 @@ Apply/implementation remains a separate gated path and is not part of the public
 
 ## What is available now
 - Verify-first read-only assessment flow with reproducible evidence artifacts.
-- Deterministic export bundles for reviewer handoff and audit sharing.
+- Deterministic handoff-pack artifacts for reviewer handoff and audit sharing.
 - Buyer/procurement packaging for security, risk, and architecture review.
 - Enterprise evaluation index for structured multi-stakeholder review.
 - Public documentation set focused on evaluation, safety posture, and procurement readiness.
@@ -30,7 +30,7 @@ Primary references: `README.md`, `docs/QUICKSTART.md`, `docs/PROCUREMENT_PACK.md
 - Strengthen controls visibility needed for enterprise change governance.
 
 ### 3) Change-ready handoff packs
-- Evolve export bundles into decision-ready handoff packs for platform, security, and CAB-style review.
+- Continue hardening decision-ready handoff packs for platform, security, and CAB-style review.
 - Improve artifact structure for traceability from observed state to proposed change intent.
 - Reduce reviewer friction with clearer summaries and consistent evidence indexing.
 
@@ -47,7 +47,7 @@ Primary references: `README.md`, `docs/QUICKSTART.md`, `docs/PROCUREMENT_PACK.md
 ## Evaluation path for new teams
 1. Run the read-only quickstart flow and generate evidence artifacts.
 2. Review verify and ROI outputs with platform/security stakeholders.
-3. Export a handoff bundle for enterprise/procurement review.
+3. Export a handoff pack for enterprise/procurement review.
 4. Decide internally whether and how to progress toward customer-managed execution.
 
 Start points: `docs/QUICKSTART.md`, `docs/BUYER_PROOF_PACK.md`, `docs/PROCUREMENT_PACK.md`.
