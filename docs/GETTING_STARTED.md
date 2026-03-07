@@ -1,4 +1,4 @@
-# ModeKeeper Quickstart (public stub)
+# ModeKeeper Quickstart (public read-only snapshot)
 
 ## Install
 
@@ -24,5 +24,5 @@ mk closed-loop run --scenario drift --observe-source synthetic --observe-duratio
 ## Notes
 
 - Public snapshot is link-first and safe-by-default (observe/plan/verify-first flow).
-- Apply/mutate paths remain gated behavior and are not part of this public stub snapshot.
+- Apply/mutate paths remain gated behavior and are not part of this public read-only snapshot.
 - Procurement artifacts are generated via `./bin/mk-procurement-pack`.

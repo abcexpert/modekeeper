@@ -1,6 +1,6 @@
 # Release
 
-Distribution boundary policy for the public showroom snapshot is documented in `docs/DISTRIBUTION_POLICY.md`.
+Distribution boundary policy for the public read-only snapshot is documented in `docs/DISTRIBUTION_POLICY.md`.
 
 ## Canonical release command
 

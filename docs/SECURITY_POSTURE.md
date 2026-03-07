@@ -1,6 +1,6 @@
 # Security Posture
 
-This page is a public showroom map for Security and Procurement review. It is intentionally link-first and points to canonical policy/workflow docs.
+This page is a public assessment map for Security and Procurement review. It is intentionally link-first and points to canonical policy/workflow docs.
 For concise RFI-style Q&A, see `docs/SECURITY_QA.md`.
 Compliance control mapping: `docs/COMPLIANCE_MATRIX.md`.
 Threat model for enterprise review: `docs/THREAT_MODEL.md`.
