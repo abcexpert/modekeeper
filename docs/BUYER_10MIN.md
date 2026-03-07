@@ -39,7 +39,8 @@ cd report/procurement_pack && sha256sum -c checksums.sha256
 ## 5) Talking points
 
 - Сначала verify, потом доверие: сначала проверяем целостность, потом читаем артефакты.
-- Один канонический путь: только procurement pack, в нём уже есть buyer artifacts и manifest с checksum.
+- Один канонический публичный путь: `observe -> plan -> verify -> export`.
+- Procurement pack остаётся упаковкой/передачей артефактов (buyer artifacts + manifest с checksum), а не самим workflow.
 - Артефакты детерминированы: структура стабильная и проверяемая.
 - Целостность проверяется явно: `sha256sum -c checksums.sha256`.
 - По умолчанию режим read-only.

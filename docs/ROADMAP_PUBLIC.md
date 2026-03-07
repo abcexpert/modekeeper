@@ -2,7 +2,8 @@
 
 ## Product direction (public)
 ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk.
-The public path is strict read-only assessment (`observe -> dry-run plan -> verify -> ROI -> export`) so teams can assess safety, controls, and value before any implementation decision.
+The public path is strict read-only assessment (`observe -> plan -> verify -> export`) so teams can assess safety, controls, and value before any implementation decision.
+ROI remains supporting evidence with explicit assumptions, not a required stage in the canonical path.
 
 Execution remains customer-managed: organizations run ModeKeeper in their own environment, with their own controls, identities, and change-management policy.
 Apply/implementation remains a separate gated path and is not part of the public assessment workflow.
