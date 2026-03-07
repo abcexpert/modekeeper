@@ -112,3 +112,49 @@ def test_mk097_export_bundle_builds_manifest_tar_and_summary(tmp_path: Path, mk_
     assert f"manifest={manifest_path}" in stdout
     assert f"tar={tar_path}" in stdout
     assert f"summary={summary_path}" in stdout
+
+
+def test_export_bundle_prefers_latest_iteration_artifacts(tmp_path: Path, mk_path: Path) -> None:
+    report_dir = tmp_path / "report"
+    out_dir = report_dir / "bundle"
+    iter_1 = report_dir / "iter_0001"
+    iter_2 = report_dir / "iter_0002"
+    iter_1.mkdir(parents=True, exist_ok=True)
+    iter_2.mkdir(parents=True, exist_ok=True)
+
+    _write_json(iter_1 / "closed_loop_latest.json", {"schema_version": "closed_loop.v0", "iteration": 1})
+    _write_json(iter_2 / "closed_loop_latest.json", {"schema_version": "closed_loop.v0", "iteration": 2})
+    _write_json(iter_1 / "k8s_verify_latest.json", {"schema_version": "k8s_verify.v0", "iteration": 1})
+    _write_json(iter_2 / "k8s_verify_latest.json", {"schema_version": "k8s_verify.v0", "iteration": 2})
+    _write_json(report_dir / "preflight_latest.json", {"schema_version": "preflight.v0", "ok": True})
+    _write_json(report_dir / "eval_latest.json", {"schema_version": "eval.v0", "sample_count": 1})
+    _write_json(
+        report_dir / "watch_latest.json",
+        {
+            "schema_version": "watch.v0",
+            "duration_s": 1,
+            "iterations_done": 2,
+            "proposed_total": 0,
+            "blocked_total": 0,
+            "applied_total": 0,
+        },
+    )
+    _write_json(
+        report_dir / "roi_latest.json",
+        {"schema_version": "roi.v0", "ok": True, "opportunity_hours_est": 0, "proposed_actions_count": 0},
+    )
+
+    cp = subprocess.run(
+        [str(mk_path), "export", "bundle", "--in", str(report_dir), "--out", str(out_dir)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert cp.returncode == 0, cp.stderr
+
+    manifest = json.loads((out_dir / "bundle_manifest.json").read_text(encoding="utf-8"))
+    rel_paths = {item.get("rel_path") for item in manifest.get("files", [])}
+    assert "iter_0002/closed_loop_latest.json" in rel_paths
+    assert "iter_0002/k8s_verify_latest.json" in rel_paths
+    assert "iter_0001/closed_loop_latest.json" not in rel_paths
+    assert "iter_0001/k8s_verify_latest.json" not in rel_paths
