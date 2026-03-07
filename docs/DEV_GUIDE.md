@@ -52,10 +52,10 @@ mk export bundle --in report --out report/_bundle
 
 ## 4) Public handoff-pack direction
 
-For customer-managed evaluation handoff, build and verify an export bundle locally:
+For customer-managed evaluation handoff, build and verify a handoff pack locally:
 
 ```bash
-mk export bundle --in report --out report/_bundle
+mk export handoff-pack --in report --out report/_handoff
 ```
 
 Then validate checksums and include generated artifacts in the review package shared with procurement/security stakeholders.
