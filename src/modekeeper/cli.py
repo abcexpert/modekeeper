@@ -4646,6 +4646,50 @@ def _find_first_named(root: Path, name: str) -> Path | None:
     return sorted(matches, key=lambda item: item.relative_to(root).as_posix())[0]
 
 
+def _iteration_index_from_path(root: Path, path: Path) -> int | None:
+    best: int | None = None
+    rel_parts = path.relative_to(root).parts[:-1]
+    for part in rel_parts:
+        match = re.fullmatch(r"iter_(\d+)", part)
+        if not match:
+            continue
+        idx = int(match.group(1))
+        if best is None or idx > best:
+            best = idx
+    return best
+
+
+def _find_preferred_named(root: Path, name: str) -> Path | None:
+    matches: list[Path] = []
+    for candidate in root.rglob(name):
+        if candidate.is_file():
+            matches.append(candidate)
+    if not matches:
+        return None
+
+    root_candidate = root / name
+    if root_candidate.is_file():
+        return root_candidate
+
+    non_iter_paths: list[Path] = []
+    iter_paths: list[tuple[int, Path]] = []
+    for candidate in matches:
+        iter_idx = _iteration_index_from_path(root, candidate)
+        if iter_idx is None:
+            non_iter_paths.append(candidate)
+        else:
+            iter_paths.append((iter_idx, candidate))
+
+    if non_iter_paths:
+        return sorted(non_iter_paths, key=lambda item: item.relative_to(root).as_posix())[0]
+
+    iter_paths_sorted = sorted(
+        iter_paths,
+        key=lambda item: (item[0], item[1].relative_to(root).as_posix()),
+    )
+    return iter_paths_sorted[-1][1]
+
+
 def _normalize_candidate_path(base_dir: Path, value: object) -> Path | None:
     if not isinstance(value, str) or not value.strip():
         return None
@@ -4775,7 +4819,7 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
         "roi_latest.json",
     ]
     for name in known_artifacts:
-        found = _find_first_named(in_dir, name)
+        found = _find_preferred_named(in_dir, name)
         if found is None:
             notes.append(f"missing_{name}")
             continue
