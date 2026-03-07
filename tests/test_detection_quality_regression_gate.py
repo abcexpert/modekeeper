@@ -2,29 +2,7 @@ import json
 import subprocess
 from pathlib import Path
 
-
-_PROOF_GATE_EXPECTATIONS = {
-    "replica_overprovisioning": {
-        "expected_signal_flags": {"drift": True, "burst": False},
-        "expected_note": "loss_drift",
-        "expected_knobs": {"grad_accum_steps", "microbatch_size"},
-    },
-    "cpu_pressure": {
-        "expected_signal_flags": {"drift": False, "burst": True},
-        "expected_note": "latency_burst",
-        "expected_knobs": {"dataloader_prefetch_factor", "concurrency"},
-    },
-    "memory_pressure": {
-        "expected_signal_flags": {"drift": True, "burst": True},
-        "expected_note": "loss_drift",
-        "expected_knobs": {
-            "grad_accum_steps",
-            "microbatch_size",
-            "dataloader_prefetch_factor",
-            "concurrency",
-        },
-    },
-}
+from modekeeper._proof_matrix_expectations import PROOF_MATRIX_EXPECTATIONS, PROOF_SCENARIO_ORDER
 
 
 def _run_scenario(mk_path: Path, tmp_path: Path, scenario: str) -> tuple[dict, dict, str]:
@@ -57,13 +35,9 @@ def test_detection_quality_regression_gate_across_proof_scenarios(
     tmp_path: Path, mk_path: Path
 ) -> None:
     # Keep gate scope pinned to post-v0.1.33 proof scenarios.
-    assert set(_PROOF_GATE_EXPECTATIONS) == {
-        "replica_overprovisioning",
-        "cpu_pressure",
-        "memory_pressure",
-    }
+    assert tuple(PROOF_MATRIX_EXPECTATIONS) == PROOF_SCENARIO_ORDER
 
-    for scenario, expected in _PROOF_GATE_EXPECTATIONS.items():
+    for scenario, expected in PROOF_MATRIX_EXPECTATIONS.items():
         latest, first_trace, summary = _run_scenario(mk_path, tmp_path, scenario)
 
         assert latest.get("assessment_result_class") == "signal_found"
@@ -74,12 +48,12 @@ def test_detection_quality_regression_gate_across_proof_scenarios(
         assert latest.get("k8s_plan_items", 0) > 0
 
         signals = first_trace.get("signals", {})
-        for flag_name, expected_value in expected["expected_signal_flags"].items():
+        for flag_name, expected_value in expected["signal_flags"].items():
             assert signals.get(flag_name) is expected_value
-        assert expected["expected_note"] in signals.get("notes", [])
+        assert expected["note"] in signals.get("notes", [])
 
         action_knobs = {a.get("knob") for a in first_trace.get("actions", []) if isinstance(a, dict)}
-        assert action_knobs == expected["expected_knobs"]
+        assert action_knobs == expected["knobs"]
 
         assert "assessment_result_class: signal_found" in summary
         assert "actionable_proposal_count: " in summary
