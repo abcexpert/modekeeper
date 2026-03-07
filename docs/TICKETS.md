@@ -4,7 +4,7 @@ This file is the public-facing roadmap/status ledger for ModeKeeper's verify-fir
 
 ## Public boundary for this ledger
 - Keep customer-safe, verify-first roadmap items only.
-- Keep customer-managed execution scope (customer runs install/eval/export in their environment).
+- Keep customer-managed execution scope (customer runs observe/plan/verify/export in their environment).
 - Keep enterprise review and handoff-pack outcomes that can be shared publicly.
 - Exclude internal operator workflows, private infrastructure paths, private repository choreography, and internal-only licensing/release mechanics.
 
@@ -81,7 +81,7 @@ This file is the public-facing roadmap/status ledger for ModeKeeper's verify-fir
     - Public docs consistently describe verify-first read-only evaluation and gated apply boundary.
     - Handoff/releasing/snapshot wording is aligned for enterprise reviewers.
   Public evidence:
-    - docs: `docs/HANDOFF.md`, `docs/RELEASING.md`, `docs/SNAPSHOT.md`
+    - docs: `docs/HANDOFF.md`, `docs/RELEASE.md`, `docs/SNAPSHOT.md`
 
 - ID: MK-136
   Title: Enterprise review pack hardening (procurement/security handoff clarity)
@@ -90,7 +90,7 @@ This file is the public-facing roadmap/status ledger for ModeKeeper's verify-fir
     - Public guidance for integrity-first review order is clear and consistent across buyer/procurement docs.
     - Required evidence set for security/procurement review is explicit and reproducible.
   Public evidence stub:
-    - docs:
+    - docs: `docs/OFFER.md`, `docs/ICP.md`, `docs/BUYER_REQUEST_CHECKLIST.md`
     - artifacts:
     - commit:
 
@@ -101,7 +101,7 @@ This file is the public-facing roadmap/status ledger for ModeKeeper's verify-fir
     - `docs/TICKETS.md`, `docs/STATUS.md`, and public roadmap references stay mutually consistent.
     - Stale references to removed/internal docs are not reintroduced.
   Public evidence stub:
-    - docs:
+    - docs: `docs/INDEX.md`, `docs/SNAPSHOT.md`, `docs/STATUS.md`
     - artifacts:
     - commit:
 

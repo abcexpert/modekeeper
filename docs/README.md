@@ -4,7 +4,9 @@ Start here:
 - Project overview: `../README.md`
 
 Key docs:
-- Workflow (install/eval/plan/verify/export): `WORKFLOW.md`
+- Public offer: `OFFER.md`
+- Ideal customer profile (ICP): `ICP.md`
+- Workflow (observe/plan/verify/export): `WORKFLOW.md`
 - Self-serve k8s runner runbook: `K8S_RUNNER_SELF_SERVE.md`
 - Release policy (public wheel-only boundary): `RELEASE.md`
 - Distribution boundary: `DISTRIBUTION_POLICY.md`

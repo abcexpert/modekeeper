@@ -28,9 +28,12 @@ The generated procurement pack includes these review docs:
 
 - Repository overview: `README.md`
 - Quickstart: `docs/QUICKSTART.md`
+- Public offer: `docs/OFFER.md`
+- Public ICP: `docs/ICP.md`
 - Security posture: `docs/SECURITY_POSTURE.md`
 - Buyer proof pack: `docs/BUYER_PROOF_PACK.md`
 - Procurement pack: `docs/PROCUREMENT_PACK.md`
 - Workflow details: `docs/WORKFLOW.md`
 - Release process: `docs/RELEASE.md`
 - Distribution policy: `docs/DISTRIBUTION_POLICY.md`
+- External realistic workload proof summary (scope-limited): `docs/ONLINE_BOUTIQUE_PROOF.md`

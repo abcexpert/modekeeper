@@ -1,11 +1,12 @@
 # Buyer Request Checklist (Pilot Intake) — ModeKeeper
 
-ModeKeeper helps Platform/SRE/FinOps teams assess Kubernetes/GPU cost and risk across:
+ModeKeeper helps Platform/SRE/FinOps teams run a verify-first, read-only assessment for Kubernetes/GPU cost and risk:
 
-**observe → evaluate/ROI → plan/verify → (optional) apply**
+**observe -> plan -> verify -> export**
 
-Core principle: **verify-first** — prove and validate before recommending, and
-only perform changes with explicit approval.
+Core principle: **verify-first** - prove and validate before any mutation decision.
+Execution is customer-managed.
+Apply/implementation is a separate licensed/gated PRO path.
 
 ---
 
@@ -79,7 +80,7 @@ Check what exists:
 
 ## 4) What you receive (pilot deliverables)
 
-### 4.1. Evaluate / ROI package
+### 4.1. Read-only assessment package
 - [ ] Baseline usage profile (CPU/RAM/GPU/Pods/Nodes) over time
 - [ ] Hotspots and inefficiencies (overprovisioning, pressure signals, waste patterns)
 - [ ] ROI estimate with assumptions (including a pricing-anchor rescaling
@@ -97,11 +98,17 @@ Only with explicit approval and in your change windows:
 - [ ] Guarded apply with pre-checks and post-verification
 - [ ] Rollback plan and stop conditions
 
+### 4.4. External realistic workload proof reference (public)
+- [ ] Review scope-limited external proof summary:
+  `docs/ONLINE_BOUTIQUE_PROOF.md`
+- [ ] Confirm scope understanding: forced scenario proof supports credibility,
+  but is not universal detection coverage.
+
 ---
 
 ## 5) What you do NOT need
 - You do not need to grant admin permissions to quantify ROI: **read-only is enough**.
-- During evaluate/plan we **do not mutate** your cluster.
+- During public assessment we **do not mutate** your cluster.
 - You can start without prices: ROI will include a pricing anchor and rescaling.
 
 ---

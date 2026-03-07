@@ -16,10 +16,11 @@ Source of detailed work tracking: `docs/TICKETS.md`.
 
 ## Public highlights
 - Verify-first read-only workflow is documented as the canonical public path.
+- Public offer and ICP docs now define a clear buyer path and first-fit boundary.
 - Enterprise-facing packaging and handoff artifacts are in place for procurement/security/platform review.
 - Public docs and CLI contracts keep apply semantics explicitly gated and non-default.
 - Distribution and boundary docs preserve a strict public/private separation for buyer-safe review.
-- Online Boutique external proof summary documents non-zero read-only signal/proposal outcomes for two forced scenarios without implying universal detection.
+- Online Boutique external proof summary documents non-zero read-only signal/proposal outcomes for two forced scenarios on a realistic external workload, without implying universal detection.
 
 ## Remaining Work
 - Open public items remain in `docs/TICKETS.md` (`MK-130`, `MK-131`, `MK-132`, `MK-136`, `MK-137`).

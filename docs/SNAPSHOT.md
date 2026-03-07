@@ -20,6 +20,7 @@ Core positioning pillars:
 
 - Public distribution is available via GitHub and PyPI (`modekeeper`).
 - Public docs are aligned around safe evaluation and evidence-first decisioning.
+- Public offer and ICP docs are available for buyer qualification and scope fit.
 - Canonical public workflow remains strict read-only assessment: `observe -> plan -> verify -> export`.
 - Apply/mutate is a separate licensed and gated path and is not baseline public evaluation.
 - Runtime execution boundary remains customer-managed in customer environments.
@@ -55,6 +56,8 @@ Customers:
 
 - `docs/WORKFLOW.md` - public execution model and boundary semantics.
 - `docs/HANDOFF.md` - handoff pack contents and verification policy.
-- `docs/RELEASING.md` - public release boundary (GitHub/PyPI).
+- `docs/OFFER.md` - public offer boundary and buyer-safe scope.
+- `docs/ICP.md` - primary fit profile and disqualifiers.
+- `docs/RELEASE.md` - public release boundary (GitHub/PyPI).
 - `docs/STATUS.md` - current public progress summary.
 - `README.md` - public product entrypoint.

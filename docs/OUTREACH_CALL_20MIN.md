@@ -31,8 +31,10 @@ Use this script:
 > 2) Can we prove value safely in read-only mode first?  
 > 3) Do we have a clear pilot and handoff plan with owners and dates?  
 > ModeKeeper works verify-first: we observe current behavior, quantify ROI,
-> produce a plan and verification evidence, and deliver a change-ready handoff
+> produce a plan and verification evidence, and export a change-ready handoff
 > pack for enterprise review. Apply/implementation is a separate gated path.
+> We also have a public external realistic workload proof summary (Online Boutique,
+> forced scenarios) as credibility input, with explicit non-universal scope.
 
 ## 2) Agenda (say this at minute 1)
 
@@ -79,7 +81,7 @@ Hold if one or more are missing:
 ### "We cannot allow risky changes."
 
 Response:
-> That is exactly why we start verify-first. Initial work is read-only: observe, ROI, and plan/verify evidence. No mutations are required for value proof.
+> That is exactly why we start verify-first. Initial work is read-only: observe, plan, verify, and export evidence. No mutations are required for value proof.
 
 ### "We do not trust black-box recommendations."
 
@@ -101,6 +103,7 @@ Response:
 Reference material for proof workflows:
 - [docs/PROOF_PACKS.md](PROOF_PACKS.md)
 - [docs/BUYER_10MIN.md](BUYER_10MIN.md)
+- [docs/ONLINE_BOUTIQUE_PROOF.md](ONLINE_BOUTIQUE_PROOF.md)
 
 ## 6) Pilot proposal (minutes 16-18)
 
@@ -112,7 +115,7 @@ Use this structure live:
 4. Phase 2 (Days 6-10): Plan/verify package with workload-level recommendations and safety checks.
 5. Phase 3 (Days 11-14): Decision checkpoint and change-ready handoff pack for enterprise review.
 6. Deliverables: baseline summary, ROI model + assumptions, plan/verify
-   artifacts, decision readout.
+   artifacts, export bundle, decision readout.
 7. Success metrics: target spend reduction/risk reduction range, plus stability
    guardrail metrics.
 
@@ -144,12 +147,13 @@ Thanks for the call today. Recap of what we aligned:
 Proposed pilot (14 days):
 - Observe baseline and quantify ROI
 - Produce plan/verify evidence package
-- Prepare change-ready handoff pack for enterprise review
+- Export a change-ready handoff pack for enterprise review
 
 Buyer references:
 - [docs/BUYER_REQUEST_CHECKLIST.md](BUYER_REQUEST_CHECKLIST.md)
 - [docs/PROOF_PACKS.md](PROOF_PACKS.md)
 - [docs/BUYER_10MIN.md](BUYER_10MIN.md)
+- [docs/ONLINE_BOUTIQUE_PROOF.md](ONLINE_BOUTIQUE_PROOF.md)
 
 If this matches your view, reply "approved" and we will start kickoff scheduling.
 
