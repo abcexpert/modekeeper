@@ -59,7 +59,7 @@ Example:
 ./.venv/bin/mk export handoff-pack --in ./out/closed_loop --out ./out/handoff
 ```
 
-Expected handoff bundle includes integrity metadata and verification helpers (manifest/checksums/summary).
+Expected handoff pack includes integrity metadata and verification helpers (manifest/checksums/summary).
 
 ## Licensed apply path (high-level gate)
 
