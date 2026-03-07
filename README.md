@@ -91,19 +91,23 @@ python3 -m pip install -U modekeeper
 mk --help
 mk observe --source synthetic --duration 10s --out report/quickstart/observe
 mk closed-loop run --scenario drift --observe-source synthetic --observe-duration 10s --dry-run --out report/quickstart/plan
-mk export bundle --in report/quickstart --out report/quickstart/export
+PLAN="$(python3 -c 'import json; print(json.load(open(\"report/quickstart/plan/closed_loop_latest.json\", encoding=\"utf-8\"))[\"k8s_plan_path\"])')"
+mk k8s verify --plan "$PLAN" --out report/quickstart/verify
+mk export handoff-pack --in report/quickstart --out report/quickstart/handoff
 
 # quickstart artifacts
 ls report/quickstart
 ls report/quickstart/observe
 ls report/quickstart/plan
-ls report/quickstart/export
+ls report/quickstart/verify
+ls report/quickstart/handoff
 ```
 
 Expected artifact roots:
 - `report/quickstart/observe` (read-only telemetry capture)
 - `report/quickstart/plan` (dry-run planning outputs)
-- `report/quickstart/export` (bundle/export outputs)
+- `report/quickstart/verify` (verify outputs)
+- `report/quickstart/handoff` (handoff-pack export outputs)
 
 ## Safety gates
 
