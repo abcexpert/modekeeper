@@ -69,16 +69,21 @@ if [[ "${branch}" != "main" ]]; then
   exit 1
 fi
 
-echo "Fetching origin/main..."
-git fetch origin main --tags
+release_remote="origin"
+if git remote get-url github >/dev/null 2>&1; then
+  release_remote="github"
+fi
+
+echo "Fetching ${release_remote}/main..."
+git fetch "${release_remote}" main --tags
 
 local_main_sha="$(git rev-parse main)"
-origin_main_sha="$(git rev-parse origin/main)"
+remote_main_sha="$(git rev-parse "${release_remote}/main")"
 
-if [[ "${local_main_sha}" != "${origin_main_sha}" ]]; then
-  echo "ERROR: local main is not up-to-date with origin/main." >&2
+if [[ "${local_main_sha}" != "${remote_main_sha}" ]]; then
+  echo "ERROR: local main is not up-to-date with ${release_remote}/main." >&2
   echo "local main : ${local_main_sha}" >&2
-  echo "origin/main: ${origin_main_sha}" >&2
+  echo "${release_remote}/main: ${remote_main_sha}" >&2
   exit 1
 fi
 
@@ -134,11 +139,11 @@ if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
   fi
 fi
 
-if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+if git ls-remote --exit-code --tags "${release_remote}" "refs/tags/${TAG}" >/dev/null 2>&1; then
   if [[ "$dry_run" -eq 1 ]]; then
-    echo "WARN: tag already exists on origin: ${TAG} (ignored for --dry-run)" >&2
+    echo "WARN: tag already exists on ${release_remote}: ${TAG} (ignored for --dry-run)" >&2
   else
-    echo "ERROR: tag already exists on origin: ${TAG}" >&2
+    echo "ERROR: tag already exists on ${release_remote}: ${TAG}" >&2
     exit 1
   fi
 fi
@@ -254,11 +259,11 @@ fi
 echo "Creating annotated tag ${TAG} on HEAD..."
 git tag -a "${TAG}" -m "release ${TAG}"
 
-echo "Pushing main..."
-git push origin main
+echo "Pushing main to ${release_remote}..."
+git push "${release_remote}" main
 
-echo "Pushing tag ${TAG}..."
-git push origin "${TAG}"
+echo "Pushing tag ${TAG} to ${release_remote}..."
+git push "${release_remote}" "${TAG}"
 
 echo "Creating GitHub release ${TAG}..."
 release_output="$(gh release create "${TAG}" "${PACK_TARBALL}" "${PACK_CHECKSUMS}" --title "${RELEASE_TITLE}" --notes "${RELEASE_NOTES}" 2>&1)"
@@ -267,7 +272,7 @@ echo "${release_output}"
 release_url="$(printf '%s\n' "${release_output}" | rg -m1 -o 'https://[^[:space:]]+' || true)"
 
 if [[ -z "${release_url}" ]]; then
-  repo_url="$(git remote get-url origin)"
+  repo_url="$(git remote get-url "${release_remote}")"
   repo_url="${repo_url%.git}"
   if [[ "${repo_url}" =~ ^git@github.com:(.+)$ ]]; then
     repo_url="https://github.com/${BASH_REMATCH[1]}"

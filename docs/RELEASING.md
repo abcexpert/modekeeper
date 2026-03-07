@@ -23,7 +23,7 @@ Before creating a release:
 ## Public release procedure
 
 1. Finalize the release version in repository metadata.
-2. Create and push a version tag from the public repository.
+2. Create and push a version tag using the release remote (`github` when present, otherwise `origin`).
 3. Publish a GitHub Release for that tag (notes/changelog should be public-safe).
 4. Publish the corresponding package version to PyPI.
 5. Verify the release boundary end to end:
