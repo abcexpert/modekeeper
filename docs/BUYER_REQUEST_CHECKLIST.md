@@ -92,6 +92,10 @@ Check what exists:
   criteria
 - [ ] Deterministic artifacts: reports + integrity checks (checksums) +
   reproducible transcript
+- [ ] Replayable proof tranche evidence on current `main`:
+  `replica_overprovisioning`, `cpu_pressure`, `memory_pressure` pass (3/3)
+  via `scripts/proof-matrix-replay.sh` (verify-first read-only confidence; no
+  new public breadth)
 
 ### 4.3. (Optional) Controlled Apply (PRO)
 Only with explicit approval and in your change windows:

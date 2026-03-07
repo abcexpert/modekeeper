@@ -23,6 +23,20 @@ How to wait checks: bin/gh-pr-wait-checks <PR_NUMBER> --repo owner/repo
 5. Public PyPI release is wheel-only; no source distribution (`.tar.gz`) is allowed.
 6. If an sdist is present on PyPI, delete the `.tar.gz` file from the PyPI project release UI.
 
+## Release-facing wording guardrail (public)
+
+When updating public release-facing docs, keep claims evidence-bound to the
+current proof layer:
+
+- Public core is frozen as of `v0.1.33` (except bugfix/contract-drift/proof-layer necessity).
+- Post-`v0.1.33` proof tranche is replayable on current `main` via
+  `scripts/proof-matrix-replay.sh`.
+- Replay matrix status is `3/3 PASS`:
+  `replica_overprovisioning`, `cpu_pressure`, `memory_pressure`.
+- Verify-first read-only posture is strengthened by deterministic replay
+  evidence.
+- Do not describe this as new public product breadth.
+
 ## Version checks
 
 Read version directly from source:

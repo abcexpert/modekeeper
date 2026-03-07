@@ -10,6 +10,7 @@
 ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk.
 Default public workflows are strict read-only assessment (`observe -> plan -> verify -> export`) for safe evaluation without cluster mutation.
 Execution is customer-managed. Licensed apply/implementation is a separate gated path and is not part of baseline public handoff execution.
+Public core behavior is frozen as of `v0.1.33`; current `main` adds replayable proof-layer depth (not new public surface), including 3/3 passing replay scenarios via `scripts/proof-matrix-replay.sh` (`replica_overprovisioning`, `cpu_pressure`, `memory_pressure`).
 
 ## What the customer receives
 A standard handoff pack is built as deterministic artifacts that can be transferred, validated, and reviewed by the customer team:
