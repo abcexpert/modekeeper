@@ -45,7 +45,8 @@ class SyntheticSource(TelemetrySource):
                     latency *= 2.05
                     throughput *= 0.55
             elif self.scenario == "memory_pressure":
-                # Deterministic proof-only profile: sustained memory-pressure-like slowdown.
+                # Deterministic proof-only profile: memory pressure slowdown + degradative drift.
+                loss += (i / steps) * 0.4
                 if i > steps * 0.55:
                     latency *= 2.15
                     throughput *= 0.48
