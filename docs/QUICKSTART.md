@@ -18,7 +18,7 @@ mk observe --source synthetic --duration 30s --record-raw report/quickstart/obse
 mk closed-loop run --scenario drift --observe-source synthetic --observe-duration 30s --dry-run --out report/quickstart/plan
 PLAN="$(python3 -c 'import json; print(json.load(open("report/quickstart/plan/closed_loop_latest.json", encoding="utf-8"))["k8s_plan_path"])')"
 mk k8s verify --plan "$PLAN" --out report/quickstart/verify
-mk export bundle --in report/quickstart --out report/quickstart/export
+mk export handoff-pack --in report/quickstart --out report/quickstart/handoff
 ```
 
 This flow is verify-first and non-mutating (`observe`, `dry-run`, `verify`, `export` only).
