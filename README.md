@@ -8,7 +8,8 @@ Apply/implementation is a separate licensed and gated path, not part of the publ
 
 ## Start here (10 minutes)
 
-Use these buyer materials. Canonical path: procurement pack.
+Use these buyer materials. Canonical workflow: observe -> plan -> verify -> export.
+Procurement pack language below refers to handoff packaging/output, not the workflow itself.
 
 - Buyer script: [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md)
 - Proof-pack map: [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md)
@@ -115,4 +116,4 @@ Details and command contracts:
 
 ## Public vs Pro
 
-Public GitHub + PyPI (`modekeeper`) provides a verify-first, read-only assessment path (`observe -> plan -> verify -> ROI -> export`) for Kubernetes/GPU cost and risk. Outputs are designed as a change-ready handoff pack for enterprise review and customer-managed execution. Apply/mutate capabilities are disabled by default in public and reserved for licensed distribution; see boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).
+Public GitHub + PyPI (`modekeeper`) provides a verify-first, read-only assessment path (`observe -> plan -> verify -> export`) for Kubernetes/GPU cost and risk. ROI is supporting evidence with explicit assumptions, not a required stage in the canonical path. Outputs are designed as a change-ready handoff pack for enterprise review and customer-managed execution. Apply/mutate capabilities are disabled by default in public and reserved for licensed distribution; see boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).
