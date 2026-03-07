@@ -15,9 +15,14 @@ _PROOF_GATE_EXPECTATIONS = {
         "expected_knobs": {"dataloader_prefetch_factor", "concurrency"},
     },
     "memory_pressure": {
-        "expected_signal_flags": {"drift": False, "burst": True},
-        "expected_note": "latency_burst",
-        "expected_knobs": {"dataloader_prefetch_factor", "concurrency"},
+        "expected_signal_flags": {"drift": True, "burst": True},
+        "expected_note": "loss_drift",
+        "expected_knobs": {
+            "grad_accum_steps",
+            "microbatch_size",
+            "dataloader_prefetch_factor",
+            "concurrency",
+        },
     },
 }
 
