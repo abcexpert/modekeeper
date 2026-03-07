@@ -53,8 +53,8 @@ Deliverables are distributed via vendor-provided stamp + transcripts + SHA256.
 - **Public (OSS / read-only):** this repository + PyPI package `modekeeper` (wheel-only). GitHub Releases here track the public package.
 - **Enterprise PRO (licensed / gated apply):** delivered separately as **notes-only** release metadata + vault-only deliverables (no GitHub assets attached).
 - **Why numbers can differ:** public and PRO ship independently; the canonical PRO deliverable is always recorded in:
-  - `docs/PROJECT_FINAL.md` (entrypoint)
-  - `docs/STATUS.md` / `docs/SNAPSHOT.md` (latest release + vault + SHA256)
+  - `docs/SNAPSHOT.md` (entrypoint)
+  - `docs/STATUS.md` (latest release + vault + SHA256)
 
 <!-- MK_RELEASE_CHANNELS_END -->
 
