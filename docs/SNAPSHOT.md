@@ -24,7 +24,31 @@ Core positioning pillars:
 - Canonical public workflow remains strict read-only assessment: `observe -> plan -> verify -> export`.
 - Apply/mutate is a separate licensed and gated path and is not baseline public evaluation.
 - Runtime execution boundary remains customer-managed in customer environments.
-- Online Boutique external proof documents non-zero read-only signal/proposal outcomes for forced oversized-request and burst-traffic scenarios, with local customer-managed artifacts.
+- Public core behavior is frozen at `v0.1.33` baseline.
+- Post-baseline updates on current `main` are limited to bugfixes, contract-drift correction, proof-layer necessity, and boundary-safe wording alignment.
+- Post-`v0.1.33` replayable proof tranche is complete on current `main` via `scripts/proof-matrix-replay.sh`:
+  `replica_overprovisioning`, `cpu_pressure`, and `memory_pressure` pass (3/3).
+
+## What the replayable proof tranche proves
+
+- The proof harness is replayable and deterministic for the published matrix scenarios (3/3 pass on current `main`).
+- Public verify-first claims are supported by reproducible evidence replay, not one-off run output.
+- This tranche increases confidence in proof-layer rigor only; it does not widen public product surface.
+
+## Claims boundary (current)
+
+Justified now:
+- ModeKeeper public core is a verify-first, strict read-only assessment workflow for Kubernetes/GPU cost and risk.
+- Public baseline behavior is frozen at `v0.1.33`, with post-baseline changes constrained as listed above.
+- Replayable proof evidence exists for the current published three-scenario matrix and passes end-to-end.
+- Customer-managed runtime boundary and gated apply separation are explicit and preserved.
+
+Explicitly not claimed:
+- Universal or exhaustive detection/coverage across all Kubernetes/GPU workloads, incidents, or environments.
+- Guaranteed savings or guaranteed risk reduction outcomes.
+- Autonomous or vendor-operated production execution.
+- Public availability of apply/implementation capabilities.
+- Expansion of public product breadth beyond the frozen core baseline.
 
 ## Canonical public workflow (high-level)
 
