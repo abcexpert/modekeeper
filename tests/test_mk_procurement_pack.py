@@ -103,6 +103,16 @@ echo "stub buyer pack" >"$OUT/manifest.txt"
     checksums = checksums_file.read_text(encoding="utf-8")
     assert "procurement_pack.tar.gz" in checksums
 
+    verify = subprocess.run(
+        ["sha256sum", "-c", "checksums.sha256"],
+        cwd=checksums_file.parent,
+        check=False,
+        capture_output=True,
+        text=True,
+        env=os.environ.copy(),
+    )
+    assert verify.returncode == 0, verify.stderr
+
 
 def test_mk_procurement_pack_includes_nested_buyer_export_bundle_artifacts(tmp_path: Path) -> None:
     source_repo = Path(__file__).resolve().parents[1]
