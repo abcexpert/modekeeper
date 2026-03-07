@@ -46,7 +46,14 @@ def test_cli_quickstart_file_source(tmp_path: Path, mk_path: Path) -> None:
     export_dir = out_dir / "export"
     assert (export_dir / "bundle_manifest.json").exists()
     assert (export_dir / "bundle.tar.gz").exists()
+    manifest = json.loads((export_dir / "bundle_manifest.json").read_text(encoding="utf-8"))
+    files = manifest.get("files")
+    rel_paths = {item.get("rel_path") for item in files} if isinstance(files, list) else set()
+    assert "plan/closed_loop_latest.json" in rel_paths
+    assert "verify/k8s_verify_latest.json" in rel_paths
     bundle_summary = (export_dir / "bundle_summary.md").read_text(encoding="utf-8")
+    assert "missing_closed_loop_latest.json" not in bundle_summary
+    assert "missing_k8s_verify_latest.json" not in bundle_summary
     assert "missing_preflight_latest.json" not in bundle_summary
     assert "missing_eval_latest.json" not in bundle_summary
     assert "missing_roi_latest.json" not in bundle_summary
