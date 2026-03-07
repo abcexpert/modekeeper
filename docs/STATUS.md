@@ -9,7 +9,8 @@ Source of detailed work tracking: `docs/TICKETS.md`.
 - Public outcome remains a change-ready handoff pack for enterprise review.
 - Apply/implementation remains separate and gated, outside the public assessment path.
 - After release `v0.1.33`, public core is the frozen baseline (except bugfix, contract drift correction, or proof-layer necessity).
-- Next delivery focus is proof-layer depth, not wider public surface.
+- Post-`v0.1.33` proof tranche is complete and replayable on current `main` (3/3 scenarios pass via `scripts/proof-matrix-replay.sh`).
+- Public-facing scope remains unchanged: proof-layer depth increased without adding new product surface.
 
 ## Totals By Status
 - TOTAL: 9 public ticket items (`MK-130`..`MK-138`)
@@ -27,13 +28,13 @@ Source of detailed work tracking: `docs/TICKETS.md`.
 ## Remaining Work
 - Open public items remain in `docs/TICKETS.md` (`MK-130`, `MK-131`, `MK-132`, `MK-136`, `MK-137`).
 
-## Canonical next proof order (post-`v0.1.33`)
-1. `replica_overprovisioning` non-zero proof
-2. CPU pressure proof
-3. memory pressure proof
-4. detection-quality regression gate across proof scenarios
+## Proof-layer replay status (post-`v0.1.33`)
+1. Replay harness: `proof_matrix_replay`
+2. Scenario results: `replica_overprovisioning`, `cpu_pressure`, `memory_pressure` all `PASS`
+3. Matrix summary: `all_passed=true`, `passed_count=3`, `failed_count=0`
+4. Replay source-of-truth: `scripts/proof-matrix-replay.sh` and current docs source-of-truth
 
 ## Next public-facing updates
 1. Keep buyer/procurement proof links current and reproducible.
-2. Keep verify-first evidence artifacts fresh for security and platform reviewers.
+2. Keep verify-first replay evidence artifacts fresh for security and platform reviewers.
 3. Keep roadmap/status/snapshot language aligned to the strict public assessment boundary.
