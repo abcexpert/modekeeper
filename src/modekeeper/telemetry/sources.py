@@ -39,6 +39,11 @@ class SyntheticSource(TelemetrySource):
                 # Deterministic proof-only profile: low/flat demand with visible drift signal.
                 loss += (i / steps) * 0.6
                 throughput = 220.0 + 8.0 * math.cos(i / 8.0) + random.uniform(-4.0, 4.0)
+            elif self.scenario == "cpu_pressure":
+                # Deterministic proof-only profile: sustained pressure window with latency spikes.
+                if i > steps * 0.58:
+                    latency *= 2.05
+                    throughput *= 0.55
             elif self.scenario == "burst" and i > steps * 0.6:
                 latency *= 1.8
             elif self.scenario == "straggler":
