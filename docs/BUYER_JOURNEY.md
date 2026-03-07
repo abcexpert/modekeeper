@@ -1,4 +1,4 @@
-# Buyer Journey (Public Showroom)
+# Buyer Journey (Public Read-Only Assessment)
 
 This flow is for buyer-safe evaluation in public mode: install, validate environment, run verify-first workflows, and prepare procurement evidence without mutations.
 Execution is customer-managed.

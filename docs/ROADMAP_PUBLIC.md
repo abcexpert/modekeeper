@@ -39,8 +39,8 @@ Primary references: `README.md`, `docs/QUICKSTART.md`, `docs/PROCUREMENT_PACK.md
 - Improve packaging for legal, risk, and architecture review cycles.
 - Keep public artifacts and docs aligned with buyer due-diligence expectations.
 
-### 5) Public showroom evolution (high level)
-- Continue improving the public showroom as a safe, read-only evaluation experience.
+### 5) Public assessment evolution (high level)
+- Continue improving the public assessment path as a safe, read-only evaluation experience.
 - Add higher-level examples and proof narratives for common enterprise scenarios.
 - Preserve a clear boundary: public roadmap communicates product direction, not internal delivery choreography.
 

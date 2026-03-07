@@ -1,7 +1,7 @@
 # Public Boundary Inventory (docs)
 
 Scope: `README.md`, top-level `docs/*.md`, and `docs/evidence/**`.
-Goal: keep public repo as a verify-first, read-only assessment showroom + buyer/procurement evidence; exclude internal-only ops/commercial internals.
+Goal: keep public repo as a verify-first, read-only assessment surface + buyer/procurement evidence; exclude internal-only ops/commercial internals.
 
 | Path | Decision | Rationale |
 |---|---|---|
@@ -39,7 +39,7 @@ Goal: keep public repo as a verify-first, read-only assessment showroom + buyer/
 | `docs/README.md` | KEEP | Public docs index/boundary framing. |
 | `docs/RECORD_REPLAY.md` | KEEP | Sanitized and merged for public boundary; public-safe replay guidance retained. |
 | `docs/RELEASE.md` | KEEP | Public release boundary and policy. |
-| `docs/RELEASE_PROCESS.md` | KEEP | Public release process for showroom package. |
+| `docs/RELEASE_PROCESS.md` | KEEP | Public release process for read-only snapshot package. |
 | `docs/RELEASING.md` | KEEP | Sanitized and merged for public boundary; private repo coupling/internal choreography removed. |
 | `docs/ROADMAP_PUBLIC.md` | KEEP | Sanitized and merged for public boundary; no dependency on internal licensing issuance doc. |
 | `docs/SAAS_SEAMS.md` | KEEP | Public future-facing architecture seams. |
@@ -53,7 +53,7 @@ Goal: keep public repo as a verify-first, read-only assessment showroom + buyer/
 | `docs/TICKETS.md` | KEEP | Sanitized and merged for public boundary; limited to public roadmap/evaluation-facing tickets. |
 | `docs/TODO_BACKLOG.md` | KEEP | Public housekeeping backlog index. |
 | `docs/WORKFLOW.md` | KEEP | Sanitized and merged for public boundary; internal key issuance/kid rotation/operator flows removed. |
-| `docs/product.md` | KEEP | Public product narrative for showroom. |
+| `docs/product.md` | KEEP | Public product narrative for assessment surface. |
 | `docs/evidence/**` | KEEP | Buyer/procurement evidence artifacts should remain in public snapshot. |
 
 ## Cleanup Status

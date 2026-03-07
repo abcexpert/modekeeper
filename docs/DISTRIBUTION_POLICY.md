@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository is a public showroom/stub surface for ModeKeeper.
+This repository is a public verify-first, read-only assessment surface for ModeKeeper.
 
 ## Public surface
 

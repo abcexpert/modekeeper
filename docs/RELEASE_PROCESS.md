@@ -1,4 +1,4 @@
-# Release Process (public showroom)
+# Release Process (public read-only snapshot)
 
 This is the canonical public release sequence.
 
