@@ -1,4 +1,4 @@
-# ModeKeeper Quickstart (public read-only snapshot)
+# ModeKeeper Getting Started (public read-only snapshot)
 
 ## Install
 
