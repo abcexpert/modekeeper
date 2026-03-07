@@ -43,6 +43,9 @@ cd report/procurement_pack && sha256sum -c checksums.sha256
 
 Verify-first means every deliverable is deterministic, accompanied by SHA256 manifests, and backed by reproducible transcripts.
 Validation should start from hashes and transcript evidence before any business review.
+Post-`v0.1.33` on current `main`, proof-layer replay is complete via `scripts/proof-matrix-replay.sh`:
+`replica_overprovisioning`, `cpu_pressure`, and `memory_pressure` all pass (3/3).
+This strengthens verify-first confidence through deterministic replay and does not add new public product breadth.
 
 PRO note: private releases are notes-only.
 Deliverables are distributed via vendor-provided stamp + transcripts + SHA256.
@@ -123,3 +126,4 @@ Details and command contracts:
 ## Public vs Pro
 
 Public GitHub + PyPI (`modekeeper`) provides a verify-first, read-only assessment path (`observe -> plan -> verify -> export`) for Kubernetes/GPU cost and risk. ROI is supporting evidence with explicit assumptions, not a required stage in the canonical path. Outputs are designed as a change-ready handoff pack for enterprise review and customer-managed execution. Apply/mutate capabilities are disabled by default in public and reserved for licensed distribution; see boundary and release rules in [`docs/DISTRIBUTION_POLICY.md`](docs/DISTRIBUTION_POLICY.md).
+As of `v0.1.33`, public core behavior is the frozen baseline; post-baseline updates on `main` are proof-layer rigor and boundary-safe wording alignment only.

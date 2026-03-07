@@ -32,6 +32,12 @@ cd report/procurement_pack && sha256sum -c checksums.sha256
 The verification should complete with no `FAILED` lines.
 
 Execution remains customer-managed; this pack is for review and handoff, not vendor-operated runtime changes.
+As of `v0.1.33`, the public core is the frozen baseline; replay proof depth has increased without widening public product surface.
+
+Current proof-layer replay status on `main`:
+- `scripts/proof-matrix-replay.sh` is replayable end-to-end.
+- `replica_overprovisioning`, `cpu_pressure`, and `memory_pressure` pass (3/3).
+- This evidence strengthens verify-first read-only due diligence via deterministic replay.
 
 ## Checklist
 
