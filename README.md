@@ -9,7 +9,7 @@ Apply/implementation is a separate licensed and gated path, not part of the publ
 ## Start here (10 minutes)
 
 Use these buyer materials. Canonical workflow: observe -> plan -> verify -> export.
-Procurement pack language below refers to handoff packaging/output, not the workflow itself.
+Procurement pack language below refers to `./bin/mk-procurement-pack` outputs (`report/procurement_pack/**`), which are distinct from `mk export handoff-pack` artifacts.
 
 - Buyer script: [`docs/BUYER_10MIN.md`](docs/BUYER_10MIN.md)
 - Proof-pack map: [`docs/PROOF_PACKS.md`](docs/PROOF_PACKS.md)
