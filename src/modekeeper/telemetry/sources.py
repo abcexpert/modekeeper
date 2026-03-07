@@ -35,6 +35,10 @@ class SyntheticSource(TelemetrySource):
 
             if self.scenario == "drift":
                 loss += (i / steps) * 0.3
+            elif self.scenario == "replica_overprovisioning":
+                # Deterministic proof-only profile: low/flat demand with visible drift signal.
+                loss += (i / steps) * 0.6
+                throughput = 220.0 + 8.0 * math.cos(i / 8.0) + random.uniform(-4.0, 4.0)
             elif self.scenario == "burst" and i > steps * 0.6:
                 latency *= 1.8
             elif self.scenario == "straggler":
