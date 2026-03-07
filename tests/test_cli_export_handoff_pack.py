@@ -62,3 +62,30 @@ def test_export_handoff_pack_builds_expected_outputs(tmp_path: Path, mk_path: Pa
         data = f.read()
 
     assert data == (out_dir / "handoff_manifest.json").read_bytes()
+
+
+def test_export_handoff_pack_manifest_includes_closed_loop_and_k8s_verify_latest(
+    tmp_path: Path, mk_path: Path
+) -> None:
+    in_dir = tmp_path / "in"
+    (in_dir / "plan").mkdir(parents=True)
+    (in_dir / "verify").mkdir(parents=True)
+
+    (in_dir / "plan" / "closed_loop_latest.json").write_text(
+        json.dumps({"schema_version": "closed_loop_report.v0", "k8s_plan_path": "k8s/plan.json"}) + "\n",
+        encoding="utf-8",
+    )
+    (in_dir / "verify" / "k8s_verify_latest.json").write_text(
+        json.dumps({"schema_version": "k8s_verify_report.v0", "ok": True}) + "\n",
+        encoding="utf-8",
+    )
+
+    out_dir = tmp_path / "out"
+    cp = _run(mk_path, ["export", "handoff-pack", "--in", str(in_dir), "--out", str(out_dir)])
+    assert cp.returncode == 0, cp.stderr
+
+    manifest = json.loads((out_dir / "handoff_manifest.json").read_text(encoding="utf-8"))
+    files = manifest.get("files")
+    rel_paths = {item.get("rel_path") for item in files} if isinstance(files, list) else set()
+    assert "plan/closed_loop_latest.json" in rel_paths
+    assert "verify/k8s_verify_latest.json" in rel_paths
