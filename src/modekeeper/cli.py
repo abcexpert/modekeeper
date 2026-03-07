@@ -4689,6 +4689,10 @@ def _extract_environment_fingerprint(eval_report: dict | None, watch_report: dic
 
 def _bundle_kind(rel_path: str) -> str:
     name = Path(rel_path).name
+    if name == "closed_loop_latest.json":
+        return "plan"
+    if name == "k8s_verify_latest.json":
+        return "verify"
     if name == "preflight_latest.json":
         return "preflight"
     if name == "eval_latest.json":
@@ -4763,6 +4767,8 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
     selected_paths: dict[str, Path] = {}
     include_paths: dict[str, Path] = {}
     known_artifacts = [
+        "closed_loop_latest.json",
+        "k8s_verify_latest.json",
         "preflight_latest.json",
         "eval_latest.json",
         "watch_latest.json",
