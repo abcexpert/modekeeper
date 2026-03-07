@@ -4,6 +4,7 @@
 ModeKeeper is a verify-first, read-only assessment product for Kubernetes/GPU cost and risk.
 The public path is strict read-only assessment (`observe -> plan -> verify -> export`) so teams can assess safety, controls, and value before any implementation decision.
 ROI remains supporting evidence with explicit assumptions, not a required stage in the canonical path.
+As of `v0.1.33`, the public core is the frozen baseline. Public changes beyond this baseline are limited to bugfixes, contract-drift correction, or proof-layer necessity.
 
 Execution remains customer-managed: organizations run ModeKeeper in their own environment, with their own controls, identities, and change-management policy.
 Apply/implementation remains a separate gated path and is not part of the public assessment workflow.
@@ -40,8 +41,13 @@ Primary references: `README.md`, `docs/QUICKSTART.md`, `docs/PROCUREMENT_PACK.md
 - Keep public artifacts and docs aligned with buyer due-diligence expectations.
 
 ### 5) Public assessment evolution (high level)
-- Continue improving the public assessment path as a safe, read-only evaluation experience.
-- Add higher-level examples and proof narratives for common enterprise scenarios.
+- Maintain the public assessment path as a safe, read-only evaluation experience.
+- Prioritize proof-layer depth over new public breadth for the next delivery cycle.
+- Follow canonical proof order from `docs/TICKETS.md`:
+  1. `replica_overprovisioning` non-zero proof
+  2. CPU pressure proof
+  3. memory pressure proof
+  4. detection-quality regression gate across proof scenarios
 - Preserve a clear boundary: public roadmap communicates product direction, not internal delivery choreography.
 
 ## Evaluation path for new teams

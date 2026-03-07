@@ -12,6 +12,24 @@ This file is the public-facing roadmap/status ledger for ModeKeeper's verify-fir
 - `TODO` - planned public-facing work.
 - `DONE` - shipped and reflected in public docs/CLI surface.
 
+## Post-`v0.1.33` baseline and proof matrix (canonical scaffold)
+- Public core is frozen as baseline after release `v0.1.33`.
+- Scope guardrail: do not widen public surface in this cycle.
+- Allowed deltas: bugfixes, contract drift correction, and proof-layer necessity.
+
+Canonical next proof order:
+1. `replica_overprovisioning` non-zero proof
+2. CPU pressure proof
+3. memory pressure proof
+4. detection-quality regression gate across proof scenarios
+
+| Order | Proof scenario | Expected outcome scaffold | Evidence scaffold | Gate |
+| --- | --- | --- | --- | --- |
+| 1 | `replica_overprovisioning` non-zero proof | Non-zero observable signal and at least one proposal path under verify-first read-only flow. | Scenario id, input snapshot, `closed_loop_latest.json`, summary note. | pending |
+| 2 | CPU pressure proof | CPU-pressure signal classification is explicit (`signal_found` or `insufficient_evidence`) with deterministic rationale. | Scenario id, pressure indicators, verify transcript, summary note. | pending |
+| 3 | memory pressure proof | Memory-pressure signal classification is explicit (`signal_found` or `insufficient_evidence`) with deterministic rationale. | Scenario id, pressure indicators, verify transcript, summary note. | pending |
+| 4 | detection-quality regression gate across proof scenarios | Cross-scenario regression gate records pass/fail and blocks quality drift for the proof set. | Matrix rollup, comparison notes, gate decision record. | pending |
+
 - EPIC: Customer-managed verify-first assessment and handoff
   Goal:
     - Maintain a strict read-only evaluation path (`observe -> plan -> verify -> export`) and clear handoff evidence for enterprise review.
